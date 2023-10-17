@@ -1,0 +1,28 @@
+{
+    "name": "@toniq-labs/thumb-gen-poc-frontend",
+    "private": true,
+    "license": "MIT",
+    "author": {
+        "name": "Toniq-Labs",
+        "url": "https://github.com/Toniq-Labs"
+    },
+    "scripts": {
+        "build": "virmator frontend build",
+        "preview": "virmator frontend preview",
+        "start": "npm install && virmator frontend",
+        "test": "virmator test-web",
+        "test:types": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@augment-vir/common": "^21.3.5",
+        "@toniq-labs/toniq-nft-frame": "^1.0.9",
+        "element-vir": "^16.5.0"
+    },
+    "devDependencies": {
+        "@augment-vir/node-js": "^21.3.5",
+        "esbuild": "^0.19.5",
+        "typescript": "^5.2.2",
+        "vite": "^4.4.11",
+        "vite-tsconfig-paths": "^4.2.1"
+    }
+}
