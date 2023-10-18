@@ -13,14 +13,18 @@
         "format": "virmator format",
         "start": "concurrently --colors --kill-others -c auto --names frontend,browser-runner \"npm start --workspace @toniq-labs/thumb-gen-poc-frontend\" \"npm start --workspace @toniq-labs/thumb-gen-poc-browser-runner\"",
         "test": "mono-vir for-each-async npm test",
-        "test:all": "concurrently --colors --kill-others-on-fail -c auto --names types,tests,spelling,format,deps \"npm run test:types\" \"npm run test\" \"npm run test:spelling\" \"npm run test:format\" \"npm run test:deps\"",
+        "test:all": "concurrently --colors --kill-others-on-fail -c auto --names types,spelling,format,deps \"npm run test:types\" \"npm run test:spelling\" \"npm run test:format\" \"npm run test:deps\"",
         "test:deps": "virmator deps check",
         "test:format": "virmator format check",
         "test:spelling": "virmator spellcheck",
-        "test:types": "tsc --noEmit"
+        "test:types": "mono-vir for-each-async tsc --noEmit"
     },
     "devDependencies": {
+        "cspell": "^7.3.8",
+        "dependency-cruiser": "^14.1.2",
+        "esbuild": "^0.19.5",
         "mono-vir": "^0.1.6",
+        "npm-check-updates": "~16.12.3",
         "prettier": "^2.8.8",
         "prettier-plugin-interpolated-html-tags": "^0.0.4",
         "prettier-plugin-jsdoc": "^0.4.2",

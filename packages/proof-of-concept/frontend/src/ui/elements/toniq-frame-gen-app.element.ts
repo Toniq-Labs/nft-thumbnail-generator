@@ -14,7 +14,9 @@ export const ToniqFrameGenApp = defineElementNoInputs({
         return html`
             <${ToniqNftFrame.assign({
                 childFrameUrl: joinUrlParts(window.location.href, 'iframe'),
+                // cspell:disable
                 nftUrl: '/content/323f84489a431d9bccb8f7d40771b0fe1c914b41418a0981c336811908c63c8bi0',
+                // cspell:enable
                 max: {
                     width: 600,
                     height: 600,
