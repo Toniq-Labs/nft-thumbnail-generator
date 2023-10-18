@@ -1,0 +1,23 @@
+{
+    "name": "@toniq-labs/thumb-gen-poc-browser-runner",
+    "private": true,
+    "license": "MIT",
+    "author": {
+        "name": "Toniq-Labs",
+        "url": "https://github.com/Toniq-Labs"
+    },
+    "scripts": {
+        "start": "ts-node src/index.ts",
+        "test": "virmator test",
+        "test:types": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@augment-vir/common": "^21.3.5",
+        "playwright": "^1.39.0",
+        "ts-node": "^10.9.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.8.6",
+        "element-vir": "^16.5.0"
+    }
+}

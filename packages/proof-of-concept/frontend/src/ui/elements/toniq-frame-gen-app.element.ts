@@ -1,6 +1,6 @@
 import {joinUrlParts} from '@augment-vir/common';
 import {ToniqNftFrame} from '@toniq-labs/toniq-nft-frame';
-import {defineElementNoInputs, html} from 'element-vir';
+import {defineElementNoInputs, html, listen} from 'element-vir';
 
 export const ToniqFrameGenApp = defineElementNoInputs({
     tagName: 'toniq-frame-gen-app',
@@ -23,7 +23,11 @@ export const ToniqFrameGenApp = defineElementNoInputs({
                     width: 600,
                     height: 600,
                 },
-            })}></${ToniqNftFrame}>
+            })}
+                ${listen(ToniqNftFrame.events.settle, (event) => {
+                    console.log(event.type);
+                })}
+            ></${ToniqNftFrame}>
         `;
     },
 });
