@@ -4,10 +4,12 @@ module.exports = {
     ...baseConfig,
     ignorePaths: [
         ...baseConfig.ignorePaths,
-        '**/www-static/content/',
+        '**/screenshots/',
     ],
     words: [
         ...baseConfig.words,
+        'requestfailed',
+        'requestfinished',
         'toniq',
     ],
 };

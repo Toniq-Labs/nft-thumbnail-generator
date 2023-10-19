@@ -11,7 +11,7 @@
     ],
     "scripts": {
         "format": "virmator format",
-        "start": "concurrently --colors --kill-others -c auto --names frontend,browser-runner \"npm start --workspace @toniq-labs/thumb-gen-poc-frontend\" \"npm start --workspace @toniq-labs/thumb-gen-poc-browser-runner\"",
+        "start": "concurrently --colors --kill-others --success first -c auto --names browser-runner,frontend \"npm start --workspace @toniq-labs/thumb-gen-poc-browser-runner\" \"npm start --workspace @toniq-labs/thumb-gen-poc-frontend\"",
         "test": "mono-vir for-each-async npm test",
         "test:all": "concurrently --colors --kill-others-on-fail -c auto --names types,spelling,format,deps \"npm run test:types\" \"npm run test:spelling\" \"npm run test:format\" \"npm run test:deps\"",
         "test:deps": "virmator deps check",

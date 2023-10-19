@@ -5,6 +5,14 @@ export default defineConfig({forGitHubPages: true}, (baseConfig) => {
         ...baseConfig,
         server: {
             port: 5643,
+            proxy: {
+                '/content': {
+                    target: 'http://34.219.146.6:8080',
+                    changeOrigin: true,
+                    autoRewrite: true,
+                    prependPath: true,
+                },
+            },
         },
     };
 });

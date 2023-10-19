@@ -13,10 +13,13 @@
     },
     "dependencies": {
         "@augment-vir/common": "^21.3.5",
+        "@augment-vir/node-js": "^19.7.0",
         "playwright": "^1.39.0",
+        "sharp": "^0.32.6",
         "ts-node": "^10.9.1"
     },
     "devDependencies": {
+        "@augment-vir/browser": "^19.7.0",
         "@types/node": "^20.8.6",
         "element-vir": "^16.5.0"
     }
