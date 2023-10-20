@@ -1,10 +1,7 @@
-import {mapObjectValues, typedObjectFromEntries} from '@augment-vir/common';
-import {log} from '@augment-vir/node-js';
+import {awaitedFilter} from '@augment-vir/common';
 import {existsSync} from 'fs';
-import {readdir, unlink, writeFile} from 'fs/promises';
+import {readdir, stat, unlink, writeFile} from 'fs/promises';
 import {join} from 'path';
-
-type NftFramePaths = Readonly<Record<string, ReadonlyArray<string>>>;
 
 export async function generateScreenshotViewer(screenshotsDir: string) {
     const indexHtmlPath = join(screenshotsDir, 'index.html');
@@ -12,45 +9,19 @@ export async function generateScreenshotViewer(screenshotsDir: string) {
         await unlink(indexHtmlPath);
     }
 
-    const allNftFrames = await readAllNftFrames(screenshotsDir);
+    const thumbnails = await awaitedFilter(await readdir(screenshotsDir), async (entry) => {
+        return (await stat(join(screenshotsDir, entry))).isFile();
+    });
 
-    const htmlText = generateHtmlText(allNftFrames);
+    const htmlText = generateHtmlText(thumbnails);
 
     await writeFile(indexHtmlPath, htmlText);
 
-    log.info(`open ${indexHtmlPath} in a browser to view all screenshots`);
+    return indexHtmlPath;
 }
 
-async function readAllNftFrames(screenshotsDir: string): Promise<NftFramePaths> {
-    const currentNfts = await readdir(screenshotsDir);
-    const nftFrameArrays: NftFramePaths = typedObjectFromEntries(
-        currentNfts.map((nftId) => [
-            nftId,
-            [] as string[],
-        ]),
-    );
-
-    return mapObjectValues(nftFrameArrays, async (nftId) => {
-        const frames = await readdir(join(screenshotsDir, nftId));
-
-        return frames.map((frameName) => join('.', nftId, frameName));
-    });
-}
-
-function generateHtmlText(framePaths: NftFramePaths): string {
-    const images = Object.entries(framePaths).map(
-        ([
-            nftId,
-            imagePaths,
-        ]) => {
-            const images = imagePaths
-                .map((imagePath) => `<img src="${imagePath}" />`)
-                .join('\n            ');
-            return `<div class="nft-wrapper" title="${nftId}">
-            ${images}
-        </div>`;
-        },
-    );
+function generateHtmlText(imageNames: ReadonlyArray<string>): string {
+    const images = imageNames.map((imageName) => `<img src="./${imageName}" />`).join('\n        ');
 
     return `<!DOCTYPE html>
 <html>
@@ -61,16 +32,11 @@ function generateHtmlText(framePaths: NftFramePaths): string {
                 display: flex;
                 gap: 16px;
                 align-items: flex-start;
+                flex-wrap: wrap;
             }
             img {
                 flex-grow: 0;
                 flex-shrink: 0;
-            }
-            .nft-wrapper {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                align-items: flex-start;
             }
         </style>
     </head>

@@ -2,23 +2,22 @@ import {waitForAnimationFrame} from '@augment-vir/browser';
 import {joinUrlParts} from '@augment-vir/common';
 import {log} from '@augment-vir/node-js';
 import type {DeclarativeElement} from 'element-vir';
-import {mkdir, writeFile} from 'fs/promises';
-import {dirname, join} from 'path';
+import {join} from 'path';
 import type {Locator} from 'playwright';
-import sharp from 'sharp';
+import sharp, {Sharp} from 'sharp';
+import {createGif} from 'sharp-gif2';
+import {firstFramesDir, screenshotsDir} from './repo-paths';
 import {WaitForAllPageRequests} from './wait-for-all-page-requests';
 
 export async function takeNftScreenshot({
     frameLocator,
     doneLoadingLocator,
     nftId,
-    screenshotsDir,
     waitForAllPageRequests,
 }: {
     frameLocator: Locator;
     doneLoadingLocator: Locator;
     nftId: string;
-    screenshotsDir: string;
     waitForAllPageRequests: WaitForAllPageRequests;
 }) {
     log.faint(`${nftId}`);
@@ -43,30 +42,41 @@ export async function takeNftScreenshot({
     await waitForAllPageRequests.allDone;
 
     /** Wait for a few frames. */
-    await waitForFrames(frameLocator, 5);
+    await waitForFrames(frameLocator, 20);
 
-    await screenshotAllFrames({locator: frameLocator, nftId, screenshotsDir});
+    await createAnimatedImage({locator: frameLocator, nftId});
 }
 
 const frameCount = 10;
 
-async function screenshotAllFrames({
-    screenshotsDir,
-    nftId,
-    locator,
-}: {
-    screenshotsDir: string;
-    nftId: string;
-    locator: Locator;
-}) {
+async function createAnimatedImage({nftId, locator}: {nftId: string; locator: Locator}) {
+    const fileName = [
+        nftId,
+        'webp',
+    ].join('.');
+
+    const frames: Sharp[] = [];
     for (let frameNumber = 0; frameNumber < frameCount; frameNumber++) {
-        await writeScreenshotFrame({
-            frameNumber,
-            locator,
-            nftId,
-            screenshotsDir,
+        const screenshotBuffer = await locator.screenshot();
+        const sharpWebp = sharp(screenshotBuffer).webp({
+            quality: 100,
+            lossless: true,
         });
+
+        frames.push(sharpWebp);
+
+        if (frameNumber === 0) {
+            await sharpWebp.toFile(join(firstFramesDir, fileName));
+        }
+        await waitForFrames(locator, 5);
     }
+
+    const animatedImage = (await createGif({delay: 200}).addFrame(frames).toSharp()).webp({
+        quality: 100,
+        lossless: true,
+    });
+
+    await animatedImage.toFile(join(screenshotsDir, fileName));
 }
 
 async function waitForFrames(locator: Locator, frameCount: number) {
@@ -74,33 +84,4 @@ async function waitForFrames(locator: Locator, frameCount: number) {
         /** WaitForAnimationFrame is set on the window by the frontend's scripts. */
         return ((window as any).waitForAnimationFrame as typeof waitForAnimationFrame)(frameCount);
     }, frameCount);
-}
-
-async function writeScreenshotFrame({
-    screenshotsDir,
-    nftId,
-    frameNumber,
-    locator,
-}: {
-    screenshotsDir: string;
-    nftId: string;
-    frameNumber: number;
-    locator: Locator;
-}): Promise<void> {
-    const screenshotBuffer = await locator.screenshot();
-    const outputPath = join(
-        screenshotsDir,
-        nftId,
-        `frame-${String(frameNumber).padStart(2, '0')}.webp`,
-    );
-
-    await mkdir(dirname(outputPath), {recursive: true});
-
-    const webpBuffer = await sharp(screenshotBuffer)
-        .webp({
-            quality: 100,
-            lossless: true,
-        })
-        .toBuffer();
-    await writeFile(outputPath, webpBuffer);
 }

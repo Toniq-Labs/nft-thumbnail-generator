@@ -1,8 +1,10 @@
 import {awaitedForEach, waitForCondition} from '@augment-vir/common';
 import {log} from '@augment-vir/node-js';
+import {mkdir, rm} from 'fs/promises';
+import open from 'open';
 import {webkit} from 'playwright';
 import {generateScreenshotViewer} from './generate-screenshot-viewer';
-import {screenshotsDir} from './repo-paths';
+import {firstFramesDir, screenshotsDir} from './repo-paths';
 import {takeNftScreenshot} from './take-nft-screenshot';
 import {nftIdTestCases} from './test-cases';
 import {WaitForAllPageRequests} from './wait-for-all-page-requests';
@@ -15,11 +17,12 @@ async function main() {
             width: 600,
         },
         serviceWorkers: 'block',
-        // // currently video is turned off
-        // recordVideo: {dir: videosDir, size: {height: 600, width: 600}},
     });
 
     const page = await browserContext.newPage();
+
+    await rm(screenshotsDir, {force: true, recursive: true});
+    await mkdir(firstFramesDir, {recursive: true});
 
     const waitForAllPageRequests = new WaitForAllPageRequests(page);
 
@@ -47,7 +50,6 @@ async function main() {
             doneLoadingLocator,
             frameLocator,
             nftId,
-            screenshotsDir,
             waitForAllPageRequests,
         });
         const nftEnd = Date.now();
@@ -59,7 +61,8 @@ async function main() {
 
     await browser.close();
 
-    await generateScreenshotViewer(screenshotsDir);
+    const viewerPath = await generateScreenshotViewer(screenshotsDir);
+    await open(`file://${viewerPath}`);
 
     log.info(`took ${(diff / 1000).toFixed(1)} seconds`);
 }
