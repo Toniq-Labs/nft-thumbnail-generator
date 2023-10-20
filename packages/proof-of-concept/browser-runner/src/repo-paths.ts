@@ -9,4 +9,3 @@ const proofOfConceptBrowserRunnerDir = join(
     'browser-runner',
 );
 export const screenshotsDir = join(proofOfConceptBrowserRunnerDir, 'screenshots');
-export const firstFramesDir = join(screenshotsDir, 'first-frames');

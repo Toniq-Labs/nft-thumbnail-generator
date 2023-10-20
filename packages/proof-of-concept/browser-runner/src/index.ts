@@ -4,8 +4,8 @@ import {mkdir, rm} from 'fs/promises';
 import open from 'open';
 import {webkit} from 'playwright';
 import {generateScreenshotViewer} from './generate-screenshot-viewer';
-import {firstFramesDir, screenshotsDir} from './repo-paths';
-import {takeNftScreenshot} from './take-nft-screenshot';
+import {generateNftThumbnail} from './generate-thumbnail';
+import {screenshotsDir} from './repo-paths';
 import {nftIdTestCases} from './test-cases';
 import {WaitForAllPageRequests} from './wait-for-all-page-requests';
 
@@ -22,7 +22,7 @@ async function main() {
     const page = await browserContext.newPage();
 
     await rm(screenshotsDir, {force: true, recursive: true});
-    await mkdir(firstFramesDir, {recursive: true});
+    await mkdir(screenshotsDir, {recursive: true});
 
     const waitForAllPageRequests = new WaitForAllPageRequests(page);
 
@@ -45,16 +45,20 @@ async function main() {
 
     const startTime = Date.now();
     await awaitedForEach(nftIdTestCases, async (nftId) => {
-        const nftStart = Date.now();
-        await takeNftScreenshot({
-            doneLoadingLocator,
-            frameLocator,
-            nftId,
-            waitForAllPageRequests,
-        });
-        const nftEnd = Date.now();
-        const nftDiff = nftEnd - nftStart;
-        log.faint(`nft took ${(nftDiff / 1000).toFixed(1)} seconds`);
+        try {
+            const nftStart = Date.now();
+            await generateNftThumbnail({
+                doneLoadingLocator,
+                frameLocator,
+                nftId,
+                waitForAllPageRequests,
+            });
+            const nftEnd = Date.now();
+            const nftDiff = nftEnd - nftStart;
+            log.faint(`nft took ${(nftDiff / 1000).toFixed(1)} seconds`);
+        } catch (error) {
+            log.error(error);
+        }
     });
     const endTime = Date.now();
     const diff = endTime - startTime;
