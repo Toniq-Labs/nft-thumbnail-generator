@@ -4,7 +4,6 @@ import {
     joinUrlParts,
     makeWritable,
     removeSuffix,
-    repeatArray,
     wait,
     wrapPromiseInTimeout,
 } from '@augment-vir/common';
@@ -15,7 +14,6 @@ import type {Locator} from 'playwright';
 import sharp, {Sharp} from 'sharp';
 import {createGif} from 'sharp-gif2';
 import {compareImages} from './image-diff';
-import {WebP} from './node-webpmux';
 import {screenshotsDir} from './repo-paths';
 import {WaitForAllPageRequests} from './wait-for-all-page-requests';
 
@@ -105,25 +103,6 @@ async function saveAnimatedWebp(outputPath: string, frames: ReadonlyArray<Readon
     });
 
     await animatedImage.toFile(removeSuffix({value: outputPath, suffix: '.webp'}) + '.gif');
-
-    const webpImage = new WebP.Image();
-    const firstFrame = await frames[0]!.webp().toBuffer();
-    if (!firstFrame) {
-        throw new Error(`Failed to find first frame for animation.`);
-    }
-
-    await webpImage.load(firstFrame);
-    webpImage.convertToAnim();
-    await Promise.all(
-        frames.map(async (frame, index) => {
-            const frameBuffer = await frame.webp().toBuffer();
-            webpImage.frames[index] = await WebP.Image.generateFrame({
-                buffer: frameBuffer,
-            });
-            webpImage.setFrameData(index, frameBuffer, {quality: 100, exact: true});
-        }),
-    );
-    await webpImage.save(outputPath);
 }
 
 async function saveThumbnail({
@@ -148,8 +127,6 @@ async function saveThumbnail({
     } else {
         log.faint('still image');
         /** If there is only one frame, then save a static image of that frame. */
-
-        await saveAnimatedWebp(outputFilePath + 'a', repeatArray(10, [frames]).flat());
         await frames[0]
             .webp({
                 quality: 100,

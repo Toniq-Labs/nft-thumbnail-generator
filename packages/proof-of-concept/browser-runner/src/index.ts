@@ -5,7 +5,6 @@ import open from 'open';
 import {webkit} from 'playwright';
 import {generateScreenshotViewer} from './generate-screenshot-viewer';
 import {generateNftThumbnail} from './generate-thumbnail';
-import {WebP} from './node-webpmux';
 import {screenshotsDir} from './repo-paths';
 import {nftIdTestCases} from './test-cases';
 import {WaitForAllPageRequests} from './wait-for-all-page-requests';
@@ -46,7 +45,6 @@ async function main() {
 
     const startTime = Date.now();
 
-    await WebP.Image.initLib();
     await awaitedForEach(nftIdTestCases, async (nftId) => {
         try {
             const nftStart = Date.now();
