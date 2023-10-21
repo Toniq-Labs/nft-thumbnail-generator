@@ -2,6 +2,9 @@ import {
     PromiseTimeoutError,
     isLengthAtLeast,
     joinUrlParts,
+    makeWritable,
+    removeSuffix,
+    repeatArray,
     wait,
     wrapPromiseInTimeout,
 } from '@augment-vir/common';
@@ -12,6 +15,7 @@ import type {Locator} from 'playwright';
 import sharp, {Sharp} from 'sharp';
 import {createGif} from 'sharp-gif2';
 import {compareImages} from './image-diff';
+import {WebP} from './node-webpmux';
 import {screenshotsDir} from './repo-paths';
 import {WaitForAllPageRequests} from './wait-for-all-page-requests';
 
@@ -88,7 +92,47 @@ export async function generateNftThumbnail(inputs: {
     await saveThumbnail({frames, nftId});
 }
 
-async function saveThumbnail({frames, nftId}: {frames: Sharp[]; nftId: string}) {
+async function saveAnimatedWebp(outputPath: string, frames: ReadonlyArray<Readonly<Sharp>>) {
+    const animatedImage = (
+        await createGif({
+            delay: 100,
+        })
+            .addFrame(makeWritable(frames))
+            .toSharp()
+    ).webp({
+        quality: 100,
+        lossless: true,
+    });
+
+    await animatedImage.toFile(removeSuffix({value: outputPath, suffix: '.webp'}) + '.gif');
+
+    const webpImage = new WebP.Image();
+    const firstFrame = await frames[0]!.webp().toBuffer();
+    if (!firstFrame) {
+        throw new Error(`Failed to find first frame for animation.`);
+    }
+
+    await webpImage.load(firstFrame);
+    webpImage.convertToAnim();
+    await Promise.all(
+        frames.map(async (frame, index) => {
+            const frameBuffer = await frame.webp().toBuffer();
+            webpImage.frames[index] = await WebP.Image.generateFrame({
+                buffer: frameBuffer,
+            });
+            webpImage.setFrameData(index, frameBuffer, {quality: 100, exact: true});
+        }),
+    );
+    await webpImage.save(outputPath);
+}
+
+async function saveThumbnail({
+    frames,
+    nftId,
+}: {
+    frames: ReadonlyArray<Readonly<Sharp>>;
+    nftId: string;
+}) {
     const outputFilePath = join(
         screenshotsDir,
         [
@@ -98,17 +142,14 @@ async function saveThumbnail({frames, nftId}: {frames: Sharp[]; nftId: string}) 
     );
     if (isLengthAtLeast(frames, 2)) {
         log.faint('animated image');
-        const animatedImage = (await createGif({delay: 200}).addFrame(frames).toSharp()).webp({
-            quality: 100,
-            lossless: true,
-        });
-
-        await animatedImage.toFile(outputFilePath);
+        await saveAnimatedWebp(outputFilePath, frames);
     } else if (!isLengthAtLeast(frames, 1)) {
         throw new Error(`No frames were generated for NFT '${nftId}'`);
     } else {
         log.faint('still image');
         /** If there is only one frame, then save a static image of that frame. */
+
+        await saveAnimatedWebp(outputFilePath + 'a', repeatArray(10, [frames]).flat());
         await frames[0]
             .webp({
                 quality: 100,
