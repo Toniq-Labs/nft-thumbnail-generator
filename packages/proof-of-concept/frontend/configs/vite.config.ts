@@ -1,4 +1,7 @@
+import {join, resolve} from 'path';
 import {defineConfig} from 'virmator/dist/compiled-base-configs/base-vite';
+
+const srcDir = resolve(__dirname, '..', 'src');
 
 export default defineConfig({forGitHubPages: true}, (baseConfig) => {
     return {
@@ -11,6 +14,16 @@ export default defineConfig({forGitHubPages: true}, (baseConfig) => {
                     changeOrigin: true,
                     autoRewrite: true,
                     prependPath: true,
+                },
+            },
+        },
+        build: {
+            ...baseConfig.build,
+            rollupOptions: {
+                ...baseConfig.build?.rollupOptions,
+                input: {
+                    main: join(srcDir, 'index.html'),
+                    iframe: join(srcDir, 'iframe', 'iframe.html'),
                 },
             },
         },

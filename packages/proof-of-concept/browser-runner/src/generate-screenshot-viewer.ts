@@ -44,6 +44,7 @@ function generateHtmlText(imageNames: ReadonlyArray<string>): string {
                 gap: 16px;
                 align-items: flex-start;
                 flex-wrap: wrap;
+                font-family: sans-serif;
             }
             img {
                 flex-grow: 0;
@@ -53,11 +54,11 @@ function generateHtmlText(imageNames: ReadonlyArray<string>): string {
                 display: flex;
                 flex-direction: column;
                 max-width: 300px;
-                text-overflow: ellipsis;
             }
             p {
                 max-width: 100%;
                 white-space: nowrap;
+                overflow: hidden;
                 text-overflow: ellipsis;
             }
         </style>

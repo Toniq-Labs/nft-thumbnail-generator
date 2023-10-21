@@ -51,7 +51,7 @@ async function waitForLoadedNft({
                 await waitForAllPageRequests.allDone;
 
                 /** Wait for a bit. */
-                await wait(350);
+                await wait(100);
             })(),
         );
     } catch (error) {
@@ -139,7 +139,7 @@ async function generateThumbnailFrames(locator: Locator) {
     }
 
     /** First try to generate 10 frames. */
-    for (let frameIndex = 0; frameIndex < maxFrameCount; frameIndex++) {
+    for (let frameIndex = 0; frameIndex < maxFrameCount / 2; frameIndex++) {
         await generateNewFrame();
     }
 
