@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "module": "ES2022",
+        "outDir": "./dist",
+        "rootDir": "./src"
+    },
+    "exclude": [
+        "./configs",
+        "./coverage",
+        "./dist",
+        "./node_modules",
+        "./test-files",
+        "./ts.out"
+    ],
+    "extends": "../../configs/tsconfig.base.json"
+}

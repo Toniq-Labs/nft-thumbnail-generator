@@ -1,0 +1,17 @@
+name: build-for-gh-pages
+
+on:
+    push:
+        branches:
+            - dev
+
+jobs:
+    build-for-gh-pages:
+        runs-on: 'ubuntu-latest'
+
+        steps:
+            - uses: actions/checkout@v3
+            - uses: JamesIves/github-pages-deploy-action@v4
+              with:
+                  branch: 'gh-pages'
+                  folder: 'pages-dist'
