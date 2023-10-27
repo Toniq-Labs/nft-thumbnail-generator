@@ -152,6 +152,9 @@ export async function startThumbnailCluster(
                     .send(`Thumbnail generation failed. See error id '${errorId}'.`);
             }
         });
+        expressApp.get('/health', (request, response) => {
+            response.status(200).send('ok');
+        });
         /** Errors fallback. */
         expressApp.use('*', (request, response) => {
             log.warn(`invalid URL: ${request.originalUrl} from ${request.ip}`);
