@@ -11,15 +11,14 @@
         "debug": "node --inspect-brk -r ts-node/register src/cli-test.ts",
         "start": "ts-node src/cli/cli.ts 2> ../../logs/stderr.log 1> ../../logs/stdout.log",
         "start:built": "npm run compile && node dist/cli/cli.js",
-        "test": "virmator test",
         "test:types": "tsc --noEmit"
     },
     "dependencies": {
-        "@augment-vir/common": "^21.3.6",
-        "@augment-vir/node-js": "^21.3.6",
+        "@augment-vir/common": "^21.4.0",
+        "@augment-vir/node-js": "^21.4.0",
         "catch-exit": "^1.2.2",
         "cli-args-vir": "^0.0.2",
-        "date-vir": "^2.0.0",
+        "date-vir": "^3.0.0",
         "express": "^4.18.2",
         "express-cluster": "^0.0.5",
         "open": "^8.4.2",
@@ -32,10 +31,10 @@
         "vite-tsconfig-paths": "^4.2.1"
     },
     "devDependencies": {
-        "@augment-vir/browser": "^21.3.6",
+        "@augment-vir/browser": "^21.4.0",
         "@types/express": "^4.17.20",
         "@types/express-cluster": "^0.0.3",
         "@types/node": "^20.8.9",
-        "element-vir": "^16.5.0"
+        "element-vir": "^16.5.1"
     }
 }
