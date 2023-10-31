@@ -27,6 +27,7 @@ export const testNftIds: ReadonlyArray<string> = [
     '1cadfb04cf9ddcaf81924734f740aeb8d2468106b6dc9adef433b7033dcc056fi0',
     '456d6c81d001805c1f5bbc27a0530fd22df1990280a6fecc4ad8801f6c0acfd9i0',
     'cbfe8771624124378a336af25ebd2187a1c1ae071c5474b3a4c09dbf04dc7a5di0',
+    'd3780d0faed0db9f8b37efd886b882d3ce3abe75acfc11f5e6a7c042928a34abi0',
     'intentionally-incorrect-inscription-id',
     // cspell:enable
 ];
