@@ -27,6 +27,13 @@ export const log = {
     info(...args: any[]) {
         runLog(logFiles.info, '[INFO]', args);
     },
+    time({nftId, description}: {nftId: string; description: string}) {
+        runLog(logFiles.info, '[TIME]', [
+            performance.now(),
+            nftId,
+            description,
+        ]);
+    },
     error(...args: any[]) {
         runLog(logFiles.error, '[ERROR]', args);
     },
