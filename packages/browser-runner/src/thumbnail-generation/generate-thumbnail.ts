@@ -57,7 +57,7 @@ async function createThumbnailBuffer({
     nftId: string;
     maxFrameCount: number;
 }): Promise<Buffer> {
-    if (frames.length > maxFrameCount / 2) {
+    if (frames.length >= maxFrameCount - 1) {
         return await generateAnimatedBuffer(frames);
     } else if (!isLengthAtLeast(frames, 1)) {
         throw new Error(`No frames were generated for NFT '${nftId}'`);
@@ -110,7 +110,7 @@ async function generateThumbnailFrames({
 
     const startTime = Date.now();
     /** If it's clear that the image is animated, keep generating frames. */
-    if (frames.length > 3) {
+    if (frames.length >= maxFrameCount / 2 - 1) {
         while (
             frames.length < maxFrameCount &&
             Date.now() - startTime < frameGenerationTime.milliseconds
