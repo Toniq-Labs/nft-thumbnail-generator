@@ -24,6 +24,7 @@ export async function runThumbGenCli(rawArgs: ReadonlyArray<string>) {
                 });
             } catch (error) {
                 log.error(`Failed to connect to content origin: ${externalContentOrigin}`);
+                throw error;
             }
         }
 
