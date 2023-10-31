@@ -7,7 +7,7 @@ import {
 } from '@augment-vir/common';
 import {addExitCallback} from 'catch-exit';
 import nodeCluster, {Worker} from 'cluster';
-import express from 'express';
+import express, {Request, Response} from 'express';
 import expressCluster from 'express-cluster';
 import {log} from '../log';
 import {PageContext, navigateToUrl, startupBrowser} from '../thumbnail-generation/browser-control';
@@ -112,9 +112,16 @@ export async function startThumbnailCluster(
             });
 
             let thumbnailQueue: Promise<void>[] = [];
+            const retryCount: Record<string, number> = {};
 
-            expressApp.get(`/${thumbnailEndpointPath}/:nftId`, async (request, response) => {
+            async function runQueuedThumbnailGeneration(
+                request: Request<{
+                    nftId: string;
+                }>,
+                response: Response,
+            ) {
                 const responseDeferredPromise = createDeferredPromiseWrapper<void>();
+                const nftId = request.params.nftId;
                 try {
                     responseDeferredPromise.promise.finally(() => {
                         if (thumbnailQueue[0] !== responseDeferredPromise.promise) {
@@ -131,7 +138,6 @@ export async function startThumbnailCluster(
                         await Promise.allSettled(shouldWaitOnThese);
                     }
 
-                    const nftId = request.params.nftId;
                     const startTime = Date.now();
                     const result = await runThumbnailEndpoint(
                         nftId,
@@ -146,17 +152,31 @@ export async function startThumbnailCluster(
 
                     response.status(result.code).send(result.value);
                 } catch (error) {
+                    if (retryCount[nftId]) {
+                        retryCount[nftId]++;
+                    } else {
+                        retryCount[nftId] = 1;
+                    }
+
                     /** Don't reject this cause it'll cause the workers to crash. */
                     responseDeferredPromise.resolve();
                     log.error(error);
-                    response
-                        .status(
-                            /** Server Error. */
-                            500,
-                        )
-                        .send('Thumbnail generation failed.');
+
+                    // retries
+                    if ((retryCount[nftId] || 0) < 3) {
+                        await runQueuedThumbnailGeneration(request, response);
+                    } else {
+                        response
+                            .status(
+                                /** Server Error. */
+                                500,
+                            )
+                            .send('Thumbnail generation failed.');
+                    }
                 }
-            });
+            }
+
+            expressApp.get(`/${thumbnailEndpointPath}/:nftId`, runQueuedThumbnailGeneration);
             expressApp.get('/health', (request, response) => {
                 response.status(200).send('ok');
             });
