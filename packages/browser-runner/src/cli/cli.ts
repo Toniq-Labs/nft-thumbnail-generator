@@ -1,6 +1,7 @@
-import {ensureError, extractErrorMessage} from '@augment-vir/common';
+import {ensureError} from '@augment-vir/common';
 import {log} from '@augment-vir/node-js';
 import nodeCluster from 'cluster';
+import {resetLogs} from '../log';
 import {startThumbnailCluster} from '../servers/thumbnail-server';
 import {ThumbnailServerConfig} from '../servers/thumbnail-server-config';
 import {CliCommandEnum, extractArgs} from './cli-args';
@@ -8,6 +9,9 @@ import {defaultServerConfig} from './cli-config';
 
 export async function runThumbGenCli(rawArgs: ReadonlyArray<string>) {
     try {
+        if (nodeCluster.isPrimary) {
+            await resetLogs();
+        }
         const {command, port, externalContentOrigin} = extractArgs(rawArgs);
 
         const fullServerConfig: ThumbnailServerConfig = {
@@ -59,10 +63,7 @@ export async function runThumbGenCli(rawArgs: ReadonlyArray<string>) {
         }
     } catch (caught) {
         const error = ensureError(caught);
-        log.error(extractErrorMessage(error));
-        if (error.stack) {
-            log.faint(error.stack);
-        }
+        log.error(error);
         process.exit(1);
     }
 }

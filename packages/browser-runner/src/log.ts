@@ -1,19 +1,26 @@
-import {log as originalLog} from '@augment-vir/node-js';
+import {appendFileSync} from 'fs';
+import {writeFile} from 'fs/promises';
+import {logFiles} from './repo-paths';
+
+export async function resetLogs() {
+    await Promise.all(
+        Object.values(logFiles).map(async (logFilePath) => {
+            await writeFile(logFilePath, '');
+        }),
+    );
+}
 
 export const log = {
     info(...args: any[]) {
-        originalLog.info(` [INFO] ${args[0]}`, ...args.slice(1));
-    },
-    faint(...args: any[]) {
-        originalLog.faint(...args);
+        appendFileSync(logFiles.info, `[INFO] ${args.map((arg) => arg.toString()).join(' ')}`);
     },
     error(...args: any[]) {
-        originalLog.error(` [ERROR] ${args[0]}`, ...args.slice(1));
+        appendFileSync(logFiles.error, `[ERROR] ${args.map((arg) => arg.toString()).join(' ')}`);
     },
     warn(...args: any[]) {
-        originalLog.error(` [WARNING] ${args[0]}`, ...args.slice(1));
+        appendFileSync(logFiles.error, `[WARNING] ${args.map((arg) => arg.toString()).join(' ')}`);
     },
     success(...args: any[]) {
-        originalLog.success(...args);
+        appendFileSync(logFiles.info, `[SUCCESS] ${args.map((arg) => arg.toString()).join(' ')}`);
     },
 };

@@ -10,7 +10,7 @@ Note that this server does not handle caching of these thumbnails.
 
 ## Logs
 
-With the default `npm start` command, all logs are stored in the `logs` directory, separate by stdout (normal logging) and stderr (error logging).
+All logs are stored in the `logs` directory, separated by info logs and error logs.
 
 ## Production startup
 

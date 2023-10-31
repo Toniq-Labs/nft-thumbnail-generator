@@ -82,7 +82,7 @@ export async function startThumbnailCluster(
     };
 
     expressCluster(async (worker) => {
-        log.faint(`Spawning express cluster worker ${worker.id}, process ${worker.process.pid}`);
+        log.info(`Spawning express cluster worker ${worker.id}, process ${worker.process.pid}`);
         const expressApp = express();
 
         const serverConfig = mergeDeep(initServerConfig, {
@@ -159,7 +159,7 @@ export async function startThumbnailCluster(
         const server = expressApp.listen(serverConfig.expressPort);
 
         addExitCallback(() => {
-            log.faint(`Closing server on worker ${worker.id}, process ${worker.process.pid}`);
+            log.info(`Closing server on worker ${worker.id}, process ${worker.process.pid}`);
             server.closeAllConnections();
             server.close();
         });

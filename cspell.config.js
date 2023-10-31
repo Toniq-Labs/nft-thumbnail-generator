@@ -6,6 +6,7 @@ module.exports = {
         ...baseConfig.ignorePaths,
         '**/.not-committed/',
         '**/pages-dist/',
+        '/logs/',
     ],
     words: [
         ...baseConfig.words,

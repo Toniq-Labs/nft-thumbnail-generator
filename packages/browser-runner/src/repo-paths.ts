@@ -3,6 +3,12 @@ import {join, resolve} from 'path';
 const monoRepoDir = resolve(__dirname, '..', '..', '..');
 const packagesDir = join(monoRepoDir, 'packages');
 const frontendPackageDir = join(packagesDir, 'thumbnail-frontend');
+const logsDir = join(monoRepoDir, 'logs');
+
+export const logFiles = {
+    info: join(logsDir, 'info.log'),
+    error: join(logsDir, 'error.log'),
+};
 
 const notCommittedDir = join(monoRepoDir, '.not-committed');
 

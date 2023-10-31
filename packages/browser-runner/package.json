@@ -10,7 +10,7 @@
         "compile": "virmator compile",
         "debug": "node --inspect-brk -r ts-node/register src/cli/cli.ts",
         "dev": "ts-node src/cli/cli.ts",
-        "start": "ts-node src/cli/cli.ts 2> ../../logs/stderr.log 1> ../../logs/stdout.log",
+        "start": "ts-node src/cli/cli.ts",
         "start:built": "npm run compile && node dist/cli/cli.js",
         "test:types": "tsc --noEmit"
     },
