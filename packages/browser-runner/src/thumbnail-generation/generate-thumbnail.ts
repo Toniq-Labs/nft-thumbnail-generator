@@ -10,7 +10,7 @@ export type ThumbnailGenerationInput = {
     maxFrameCount: number;
 } & WaitForLoadedNftInputs;
 
-const frameGenerationTime = {milliseconds: 5_000};
+const frameGenerationTime = {milliseconds: 10_000};
 
 export async function generateNftThumbnail(inputs: ThumbnailGenerationInput): Promise<Buffer> {
     const {nftId, maxFrameCount} = inputs;
@@ -88,20 +88,38 @@ async function generateThumbnailFrames({
     const frames: Sharp[] = [];
 
     async function generateNewFrame() {
+        await wait(100);
         const newFrame = sharp(await frameLocator.screenshot());
 
-        const latestFrame = frames[frames.length - 1];
-
-        if (latestFrame) {
+        if (frames.length) {
+            const latestFrame = frames[frames.length - 1];
+            if (!latestFrame) {
+                throw new Error(
+                    `${nftId} failed to find latest frame at index ${frames.length - 1}`,
+                );
+            }
             const diff = await compareImages(latestFrame, newFrame);
+            log.time({nftId, description: `got diff ${diff} for frame ${frames.length}`});
             if (diff > 5) {
+                // // uncomment for debugging
+                // await newFrame
+                //     .webp({
+                //         quality: 100,
+                //         lossless: true,
+                //     })
+                //     .toFile(join(debugDir, `${nftId}-${frames.length}.webp`));
                 frames.push(newFrame);
             }
         } else {
+            // // uncomment for debugging
+            // await newFrame
+            //     .webp({
+            //         quality: 100,
+            //         lossless: true,
+            //     })
+            //     .toFile(join(debugDir, `${nftId}-${frames.length}.webp`));
             frames.push(newFrame);
         }
-
-        await wait(100);
     }
 
     /** First try to generate some frames. */
