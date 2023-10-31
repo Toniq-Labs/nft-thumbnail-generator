@@ -3,9 +3,7 @@ import {
     ArrayElement,
     Overwrite,
     createDeferredPromiseWrapper,
-    extractErrorMessage,
     mergeDeep,
-    randomString,
 } from '@augment-vir/common';
 import {addExitCallback} from 'catch-exit';
 import nodeCluster, {Worker} from 'cluster';
@@ -82,91 +80,100 @@ export async function startThumbnailCluster(
     };
 
     expressCluster(async (worker) => {
-        log.info(`Spawning express cluster worker ${worker.id}, process ${worker.process.pid}`);
-        const expressApp = express();
-
-        const serverConfig = mergeDeep(initServerConfig, {
-            viteUrl: {
-                /** Each worker's vite port needs to be unique. */
-                port: initServerConfig.viteUrl.port + worker.id,
-            },
-        });
-
-        const [
-            pageContext,
-            viteServer,
-        ] = [
-            startupBrowser(serverConfig.browserConfig),
-            startViteServer(serverConfig),
-        ];
-
-        await viteServer;
-        await navigateToUrl({
-            page: (await pageContext).page,
-            url: formViteUrl(serverConfig),
-        });
-
-        const thumbnailQueue: Promise<void>[] = [];
-
-        expressApp.get(`/${thumbnailEndpointPath}/:nftId`, async (request, response) => {
-            const responseDeferredPromise = createDeferredPromiseWrapper<void>();
-            responseDeferredPromise.promise.finally(() => {
-                if (thumbnailQueue[0] !== responseDeferredPromise.promise) {
-                    throw new Error(`Oh no the queue got jumbled up!`);
-                }
-
-                thumbnailQueue.shift();
+        try {
+            addExitCallback(() => {
+                log.info(`Closing server on worker ${worker.id}, process ${worker.process.pid}`);
+                server.closeAllConnections();
+                server.close();
             });
 
-            try {
-                thumbnailQueue.push(responseDeferredPromise.promise);
-                const shouldWaitOnThese = thumbnailQueue.slice(0, -1);
-                if (shouldWaitOnThese.length) {
-                    await Promise.allSettled(shouldWaitOnThese);
+            log.info(`Spawning express cluster worker ${worker.id}, process ${worker.process.pid}`);
+            const expressApp = express();
+
+            const serverConfig = mergeDeep(initServerConfig, {
+                viteUrl: {
+                    /** Each worker's vite port needs to be unique. */
+                    port: initServerConfig.viteUrl.port + worker.id,
+                },
+            });
+
+            const [
+                pageContext,
+                viteServer,
+            ] = [
+                startupBrowser(serverConfig.browserConfig),
+                startViteServer(serverConfig),
+            ];
+
+            await viteServer;
+            await navigateToUrl({
+                page: (await pageContext).page,
+                url: formViteUrl(serverConfig),
+            });
+
+            let thumbnailQueue: Promise<void>[] = [];
+
+            expressApp.get(`/${thumbnailEndpointPath}/:nftId`, async (request, response) => {
+                const responseDeferredPromise = createDeferredPromiseWrapper<void>();
+                try {
+                    responseDeferredPromise.promise.finally(() => {
+                        if (thumbnailQueue[0] !== responseDeferredPromise.promise) {
+                            log.error(`Oh no the queue got jumbled up!`);
+                            thumbnailQueue = [];
+                        }
+
+                        thumbnailQueue.shift();
+                    });
+
+                    thumbnailQueue.push(responseDeferredPromise.promise);
+                    const shouldWaitOnThese = thumbnailQueue.slice(0, -1);
+                    if (shouldWaitOnThese.length) {
+                        await Promise.allSettled(shouldWaitOnThese);
+                    }
+
+                    const nftId = request.params.nftId;
+                    const startTime = Date.now();
+                    const result = await runThumbnailEndpoint(
+                        nftId,
+                        serverConfig,
+                        await pageContext,
+                    );
+                    const endTime = Date.now();
+                    const diffTime = {seconds: ((endTime - startTime) / 1000).toFixed(1)};
+                    log.info(`${nftId} took ${diffTime.seconds} seconds`);
+
+                    responseDeferredPromise.resolve();
+
+                    response.status(result.code).send(result.value);
+                } catch (error) {
+                    /** Don't reject this cause it'll cause the workers to crash. */
+                    responseDeferredPromise.resolve();
+                    log.error(error);
+                    response
+                        .status(
+                            /** Server Error. */
+                            500,
+                        )
+                        .send('Thumbnail generation failed.');
                 }
+            });
+            expressApp.get('/health', (request, response) => {
+                response.status(200).send('ok');
+            });
+            /** Errors fallback. */
+            expressApp.use('*', (request, response) => {
+                log.warn(`invalid URL: ${request.originalUrl} from ${request.ip}`);
+                response.status(404).send('Invalid endpoint.');
+            });
 
-                const nftId = request.params.nftId;
-                const startTime = Date.now();
-                const result = await runThumbnailEndpoint(nftId, serverConfig, await pageContext);
-                const endTime = Date.now();
-                const diffTime = {seconds: ((endTime - startTime) / 1000).toFixed(1)};
-                log.info(`${nftId} took ${diffTime.seconds} seconds`);
+            const server = expressApp.listen(serverConfig.expressPort);
 
-                responseDeferredPromise.resolve();
-
-                response.status(result.code).send(result.value);
-            } catch (error) {
-                /** Don't reject this cause it'll cause the workers to crash. */
-                responseDeferredPromise.resolve();
-                const errorId = randomString();
-                log.error(`{errorId: ${errorId}} ${extractErrorMessage(error)}`);
-                response
-                    .status(
-                        /** Server Error. */
-                        500,
-                    )
-                    .send(`Thumbnail generation failed. See error id '${errorId}'.`);
-            }
-        });
-        expressApp.get('/health', (request, response) => {
-            response.status(200).send('ok');
-        });
-        /** Errors fallback. */
-        expressApp.use('*', (request, response) => {
-            log.warn(`invalid URL: ${request.originalUrl} from ${request.ip}`);
-            response.status(404).send('Invalid endpoint.');
-        });
-
-        const server = expressApp.listen(serverConfig.expressPort);
-
-        addExitCallback(() => {
-            log.info(`Closing server on worker ${worker.id}, process ${worker.process.pid}`);
-            server.closeAllConnections();
-            server.close();
-        });
-
-        worker.send(workerStartedMessage);
-        return server;
+            worker.send(workerStartedMessage);
+            return server;
+        } catch (error) {
+            log.error(error);
+            throw error;
+        }
     }, clusterConfig as any);
 
     if (nodeCluster.isPrimary) {

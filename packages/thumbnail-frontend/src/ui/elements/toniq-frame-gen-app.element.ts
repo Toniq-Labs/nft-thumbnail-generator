@@ -30,7 +30,7 @@ export const ToniqFrameGenApp = defineElementNoInputs({
                 loadWait: {
                     milliseconds: 500,
                 },
-                timeoutMs: 30_000,
+                timeoutMs: 10_000,
             })}></${ToniqNftFrame}>
         `;
     },

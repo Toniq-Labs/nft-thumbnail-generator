@@ -28,3 +28,7 @@ export const log = {
         appendFileSync(logFiles.info, `[SUCCESS] ${joinArgs(args)}`);
     },
 };
+
+console.log = log.info;
+console.error = log.error;
+console.warn = log.warn;
