@@ -1,3 +1,4 @@
+import {getNowFullDate, utcTimezone} from 'date-vir';
 import {appendFileSync} from 'fs';
 import {writeFile} from 'fs/promises';
 import {logFiles} from './repo-paths';
@@ -10,22 +11,30 @@ export async function resetLogs() {
     );
 }
 
-function joinArgs(...args: any[]): string {
-    return args.map((arg) => arg.toString()).join(' ') + '\n';
+function runLog(logFilePath: string, logHeader: string, args: any[]) {
+    const joinedArgs = args.map((arg) => arg.toString()).join(' ') + '\n';
+    const now = getNowFullDate(utcTimezone);
+    const timestamp = `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(
+        2,
+        '0',
+    )} ${String(now.hour).padStart(2, '0')}:${String(now.minute).padStart(2, '0')}:${String(
+        now.second,
+    ).padStart(2, '0')}`;
+    appendFileSync(logFilePath, `${timestamp} | ${logHeader} ${joinedArgs}`);
 }
 
 export const log = {
     info(...args: any[]) {
-        appendFileSync(logFiles.info, `[INFO] ${joinArgs(args)}`);
+        runLog(logFiles.info, '[INFO]', args);
     },
     error(...args: any[]) {
-        appendFileSync(logFiles.error, `[ERROR] ${joinArgs(args)}`);
+        runLog(logFiles.error, '[ERROR]', args);
     },
     warn(...args: any[]) {
-        appendFileSync(logFiles.error, `[WARNING] ${joinArgs(args)}`);
+        runLog(logFiles.error, '[WARNING]', args);
     },
     success(...args: any[]) {
-        appendFileSync(logFiles.info, `[SUCCESS] ${joinArgs(args)}`);
+        runLog(logFiles.info, '[SUCCESS]', args);
     },
 };
 
