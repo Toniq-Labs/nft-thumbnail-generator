@@ -1,5 +1,5 @@
 import {PromiseTimeoutError, joinUrlParts, wait, wrapPromiseInTimeout} from '@augment-vir/common';
-import type {DiffUnit, Duration} from 'date-vir';
+import {Duration, DurationUnit} from 'date-vir';
 import type {DeclarativeElement} from 'element-vir';
 import type {Locator} from 'playwright';
 import {log} from '../log';
@@ -10,7 +10,7 @@ export type WaitForLoadedNftInputs = {
     doneLoadingLocator: Locator;
     nftId: string;
     waitForAllPageRequests: WaitForAllPageRequests;
-    maxLoadTime: Duration<DiffUnit.Milliseconds>;
+    maxLoadTime: Duration<DurationUnit.Milliseconds>;
     externalContentUrlOrigin: string;
     externalContentUrlPath: string;
 };

@@ -9,17 +9,17 @@
     "scripts": {
         "build": "virmator frontend build",
         "preview": "virmator frontend preview",
-        "start": "npm install && virmator frontend",
+        "start": "virmator frontend",
         "test:types": "tsc --noEmit"
     },
     "dependencies": {
-        "@augment-vir/browser": "^21.4.0",
-        "@augment-vir/common": "^21.4.0",
+        "@augment-vir/browser": "^21.5.0",
+        "@augment-vir/common": "^21.5.0",
         "@toniq-labs/toniq-nft-frame": "^1.1.0",
         "element-vir": "^16.5.1"
     },
     "devDependencies": {
-        "@augment-vir/node-js": "^21.4.0",
+        "@augment-vir/node-js": "^21.5.0",
         "esbuild": "^0.19.5",
         "typescript": "^5.2.2",
         "vite": "^4.5.0",

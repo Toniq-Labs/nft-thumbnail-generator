@@ -8,6 +8,10 @@ Note that this server does not handle caching of these thumbnails.
 
 # How to use
 
+## Logs
+
+With the default `npm start` command, all logs are stored in the `logs` directory, separate by stdout (normal logging) and stderr (error logging).
+
 ## Production startup
 
 1.  Clone this repo
