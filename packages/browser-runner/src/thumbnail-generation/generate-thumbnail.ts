@@ -64,7 +64,7 @@ async function createThumbnailBuffer({
     } else {
         const latestFrame = frames[frames.length - 1];
         if (!latestFrame) {
-            throw new Error(`[ERROR] failed to find latest frame in a still image`);
+            throw new Error(`Failed to find latest frame in a still image`);
         }
 
         /** If there is only one frame, then save a static image of that frame. */

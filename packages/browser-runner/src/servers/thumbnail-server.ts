@@ -4,6 +4,7 @@ import {
     Overwrite,
     createDeferredPromiseWrapper,
     mergeDeep,
+    wait,
 } from '@augment-vir/common';
 import {addExitCallback} from 'catch-exit';
 import nodeCluster, {Worker} from 'cluster';
@@ -163,7 +164,8 @@ export async function startThumbnailCluster(
                     log.error(error);
 
                     // retries
-                    if ((retryCount[nftId] || 0) < 3) {
+                    if ((retryCount[nftId] || 0) < 5) {
+                        await wait(1000);
                         await runQueuedThumbnailGeneration(request, response);
                     } else {
                         response
