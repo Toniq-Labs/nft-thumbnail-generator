@@ -126,22 +126,17 @@ export async function startThumbnailCluster(
                 }
 
                 const nftId = request.params.nftId;
-                log.faint(`Handling ${nftId}`);
                 const startTime = Date.now();
                 const result = await runThumbnailEndpoint(nftId, serverConfig, await pageContext);
                 const endTime = Date.now();
                 const diffTime = {seconds: ((endTime - startTime) / 1000).toFixed(1)};
                 log.info(`${nftId} took ${diffTime.seconds} seconds`);
 
-                if (thumbnailQueue[0] !== responseDeferredPromise.promise) {
-                    throw new Error(`Oh no the queue got jumbled up!`);
-                }
-
                 responseDeferredPromise.resolve();
 
                 response.status(result.code).send(result.value);
             } catch (error) {
-                responseDeferredPromise.resolve();
+                responseDeferredPromise.reject(error);
                 const errorId = randomString();
                 log.error(`{errorId: ${errorId}} ${extractErrorMessage(error)}`);
                 response

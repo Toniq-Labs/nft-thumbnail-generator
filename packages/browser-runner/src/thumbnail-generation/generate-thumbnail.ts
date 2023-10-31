@@ -1,5 +1,4 @@
 import {isLengthAtLeast, makeWritable, wait} from '@augment-vir/common';
-import {DiffUnit, Duration} from 'date-vir';
 import type {Locator} from 'playwright';
 import sharp, {Sharp} from 'sharp';
 import {createGif} from 'sharp-gif2';
@@ -11,6 +10,8 @@ export type ThumbnailGenerationInput = {
     maxFrameCount: number;
 } & WaitForLoadedNftInputs;
 
+const frameGenerationTime = {milliseconds: 5_000};
+
 export async function generateNftThumbnail(inputs: ThumbnailGenerationInput): Promise<Buffer> {
     const {nftId, maxFrameCount, frameLocator, maxLoadTime} = inputs;
 
@@ -18,14 +19,14 @@ export async function generateNftThumbnail(inputs: ThumbnailGenerationInput): Pr
     const frames = await generateThumbnailFrames({
         locator: frameLocator,
         maxFrameCount,
-        maxLoadTime,
     });
 
     if (frames.length !== maxFrameCount && frames.length !== 1) {
         log.warn(`Unexpected frame count '${frames.length}' for NFT '${nftId}'`);
     }
 
-    return await createThumbnailBuffer({frames, nftId});
+    const buffer = await createThumbnailBuffer({frames, nftId, maxFrameCount});
+    return buffer;
 }
 
 async function generateAnimatedBuffer(frames: ReadonlyArray<Readonly<Sharp>>): Promise<Buffer> {
@@ -46,17 +47,24 @@ async function generateAnimatedBuffer(frames: ReadonlyArray<Readonly<Sharp>>): P
 async function createThumbnailBuffer({
     frames,
     nftId,
+    maxFrameCount,
 }: {
     frames: ReadonlyArray<Readonly<Sharp>>;
     nftId: string;
+    maxFrameCount: number;
 }): Promise<Buffer> {
-    if (isLengthAtLeast(frames, 2)) {
+    if (frames.length > maxFrameCount / 2) {
         return await generateAnimatedBuffer(frames);
     } else if (!isLengthAtLeast(frames, 1)) {
         throw new Error(`No frames were generated for NFT '${nftId}'`);
     } else {
+        const latestFrame = frames[frames.length - 1];
+        if (!latestFrame) {
+            throw new Error(`[ERROR] failed to find latest frame in a still image`);
+        }
+
         /** If there is only one frame, then save a static image of that frame. */
-        return await frames[0]
+        return await latestFrame
             .webp({
                 quality: 100,
                 lossless: true,
@@ -68,12 +76,10 @@ async function createThumbnailBuffer({
 async function generateThumbnailFrames({
     locator,
     maxFrameCount,
-    maxLoadTime,
 }: {
     locator: Locator;
     maxFrameCount: number;
-    maxLoadTime: Duration<DiffUnit.Milliseconds>;
-} & Pick<ThumbnailGenerationInput, 'maxFrameCount' | 'maxLoadTime'>) {
+} & Pick<ThumbnailGenerationInput, 'maxFrameCount'>) {
     const frames: Sharp[] = [];
 
     async function generateNewFrame() {
@@ -100,8 +106,13 @@ async function generateThumbnailFrames({
 
     const startTime = Date.now();
     /** If it's clear that the image is animated, keep generating frames. */
-    while (frames.length < maxFrameCount && Date.now() - startTime < maxLoadTime.milliseconds) {
-        await generateNewFrame();
+    if (frames.length > 3) {
+        while (
+            frames.length < maxFrameCount &&
+            Date.now() - startTime < frameGenerationTime.milliseconds
+        ) {
+            await generateNewFrame();
+        }
     }
 
     return frames;

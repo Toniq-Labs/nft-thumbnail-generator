@@ -11,7 +11,7 @@ export const defaultServerConfig: Omit<
     externalContentUrlPath: 'content',
     maxFrameCount: 10,
     maxLoadTime: {
-        milliseconds: 10_000,
+        milliseconds: 30_000,
     },
     browserConfig: {
         browserSize: {
