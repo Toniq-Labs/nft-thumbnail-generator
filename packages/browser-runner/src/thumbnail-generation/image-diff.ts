@@ -12,7 +12,7 @@ export async function compareImages(a: Sharp, b: Sharp, threshold = 0.15): Promi
     const rawBaseline = await a.ensureAlpha().raw().toBuffer();
 
     let diffPixels = 0;
-    const rawComparison = await b.raw().toBuffer();
+    const rawComparison = await b.ensureAlpha().raw().toBuffer();
 
     if (rawBaseline.equals(rawComparison)) {
         /** No need to check further if the buffers are exactly equal. */
