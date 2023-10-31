@@ -11,7 +11,12 @@ import nodeCluster, {Worker} from 'cluster';
 import express, {Request, Response} from 'express';
 import expressCluster from 'express-cluster';
 import {log} from '../log';
-import {PageContext, navigateToUrl, startupBrowser} from '../thumbnail-generation/browser-control';
+import {
+    PageContext,
+    navigateToUrl,
+    setupBrowserPage,
+    startupBrowser,
+} from '../thumbnail-generation/browser-control';
 import {
     ThumbnailGenerationInput,
     generateNftThumbnail,
@@ -99,20 +104,12 @@ export async function startThumbnailCluster(
             });
 
             const [
-                pageContext,
-                viteServer,
-            ] = [
+                browserContext,
+            ] = await Promise.all([
                 startupBrowser(serverConfig.browserConfig),
                 startViteServer(serverConfig),
-            ];
+            ]);
 
-            await viteServer;
-            await navigateToUrl({
-                page: (await pageContext).page,
-                url: formViteUrl(serverConfig),
-            });
-
-            let thumbnailQueue: Promise<void>[] = [];
             const retryCount: Record<string, number> = {};
 
             async function runQueuedThumbnailGeneration(
@@ -121,30 +118,22 @@ export async function startThumbnailCluster(
                 }>,
                 response: Response,
             ) {
+                const pageContext = await setupBrowserPage(browserContext);
+
+                await navigateToUrl({
+                    page: pageContext.page,
+                    url: formViteUrl(serverConfig),
+                });
+
                 const responseDeferredPromise = createDeferredPromiseWrapper<void>();
                 const nftId = request.params.nftId;
                 try {
-                    responseDeferredPromise.promise.finally(() => {
-                        if (thumbnailQueue[0] !== responseDeferredPromise.promise) {
-                            log.error(`Oh no the queue got jumbled up!`);
-                            thumbnailQueue = [];
-                        }
-
-                        thumbnailQueue.shift();
+                    responseDeferredPromise.promise.finally(async () => {
+                        await pageContext.page.close();
                     });
 
-                    thumbnailQueue.push(responseDeferredPromise.promise);
-                    const shouldWaitOnThese = thumbnailQueue.slice(0, -1);
-                    if (shouldWaitOnThese.length) {
-                        await Promise.allSettled(shouldWaitOnThese);
-                    }
-
                     const startTime = Date.now();
-                    const result = await runThumbnailEndpoint(
-                        nftId,
-                        serverConfig,
-                        await pageContext,
-                    );
+                    const result = await runThumbnailEndpoint(nftId, serverConfig, pageContext);
                     const endTime = Date.now();
                     const diffTime = {seconds: ((endTime - startTime) / 1000).toFixed(1)};
                     log.info(`${nftId} took ${diffTime.seconds} seconds`);

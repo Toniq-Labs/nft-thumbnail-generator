@@ -1,5 +1,5 @@
 import {waitForCondition} from '@augment-vir/common';
-import {Locator, Page, webkit} from 'playwright';
+import {BrowserContext, Locator, Page, webkit} from 'playwright';
 import {WaitForAllPageRequests} from './wait-for-all-page-requests';
 
 export type BrowserStartupConfig = {
@@ -19,7 +19,7 @@ export type PageContext = {
 
 export async function startupBrowser({
     browserSize: {height, width},
-}: BrowserStartupConfig): Promise<PageContext> {
+}: BrowserStartupConfig): Promise<BrowserContext> {
     const browser = await webkit.launch();
     const browserContext = await browser.newContext({
         viewport: {
@@ -29,6 +29,10 @@ export async function startupBrowser({
         serviceWorkers: 'block',
     });
 
+    return browserContext;
+}
+
+export async function setupBrowserPage(browserContext: BrowserContext) {
     const page = await browserContext.newPage();
 
     const waitForAllPageRequests = new WaitForAllPageRequests(page);
