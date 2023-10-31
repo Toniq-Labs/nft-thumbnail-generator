@@ -13,23 +13,20 @@ export type ThumbnailGenerationInput = {
 const frameGenerationTime = {milliseconds: 5_000};
 
 export async function generateNftThumbnail(inputs: ThumbnailGenerationInput): Promise<Buffer> {
-    const {nftId, maxFrameCount, frameLocator} = inputs;
+    const {nftId, maxFrameCount} = inputs;
 
-    log.info('waiting for load', nftId, performance.now());
+    log.time({nftId, description: 'waiting for load'});
     await waitForLoadedNft(inputs);
-    log.info('generating frames', nftId, performance.now());
-    const frames = await generateThumbnailFrames({
-        locator: frameLocator,
-        maxFrameCount,
-    });
+    log.time({nftId, description: 'generating frames'});
+    const frames = await generateThumbnailFrames(inputs);
 
     if (frames.length !== maxFrameCount && frames.length !== 1) {
-        log.warn(`Unexpected frame count '${frames.length}' for NFT '${nftId}'`);
+        log.warn(nftId, `unexpected frame count '${frames.length}'`);
     }
 
-    log.info('creating buffer', nftId, performance.now());
+    log.time({nftId, description: 'creating buffer'});
     const buffer = await createThumbnailBuffer({frames, nftId, maxFrameCount});
-    log.info('finished', nftId, performance.now());
+    log.time({nftId, description: 'returning buffer'});
     return buffer;
 }
 
@@ -58,15 +55,17 @@ async function createThumbnailBuffer({
     maxFrameCount: number;
 }): Promise<Buffer> {
     if (frames.length >= maxFrameCount - 1) {
+        log.time({nftId, description: `creating animation with ${frames.length} frames`});
         return await generateAnimatedBuffer(frames);
     } else if (!isLengthAtLeast(frames, 1)) {
         throw new Error(`No frames were generated for NFT '${nftId}'`);
     } else {
         const latestFrame = frames[frames.length - 1];
         if (!latestFrame) {
-            throw new Error(`Failed to find latest frame in a still image`);
+            throw new Error(`Failed to find latest frame in a still image for NFT '${nftId}'`);
         }
 
+        log.time({nftId, description: `creating static image with frame '${frames.length - 1}'`});
         /** If there is only one frame, then save a static image of that frame. */
         return await latestFrame
             .webp({
@@ -78,16 +77,18 @@ async function createThumbnailBuffer({
 }
 
 async function generateThumbnailFrames({
-    locator,
+    frameLocator,
     maxFrameCount,
+    nftId,
 }: {
-    locator: Locator;
+    frameLocator: Locator;
     maxFrameCount: number;
+    nftId: string;
 } & Pick<ThumbnailGenerationInput, 'maxFrameCount'>) {
     const frames: Sharp[] = [];
 
     async function generateNewFrame() {
-        const newFrame = sharp(await locator.screenshot());
+        const newFrame = sharp(await frameLocator.screenshot());
 
         const latestFrame = frames[frames.length - 1];
 
@@ -104,13 +105,16 @@ async function generateThumbnailFrames({
     }
 
     /** First try to generate some frames. */
+    log.time({nftId, description: 'gathering initial frames'});
     for (let frameIndex = 0; frameIndex < maxFrameCount / 2; frameIndex++) {
         await generateNewFrame();
     }
+    log.time({nftId, description: `got ${frames.length} unique frames`});
 
     const startTime = Date.now();
     /** If it's clear that the image is animated, keep generating frames. */
     if (frames.length >= maxFrameCount / 2 - 1) {
+        log.time({nftId, description: 'gathering more frames'});
         while (
             frames.length < maxFrameCount &&
             Date.now() - startTime < frameGenerationTime.milliseconds
@@ -118,6 +122,7 @@ async function generateThumbnailFrames({
             await generateNewFrame();
         }
     }
+    log.time({nftId, description: 'done getting frames'});
 
     return frames;
 }

@@ -88,7 +88,7 @@ export async function startThumbnailCluster(
     expressCluster(async (worker) => {
         try {
             addExitCallback(() => {
-                log.info(`Closing server on worker ${worker.id}, process ${worker.process.pid}`);
+                log.warn(`Closing server on worker ${worker.id}, process ${worker.process.pid}`);
                 server.closeAllConnections();
                 server.close();
             });
@@ -150,13 +150,14 @@ export async function startThumbnailCluster(
 
                     /** Don't reject this cause it'll cause the workers to crash. */
                     responseDeferredPromise.resolve();
-                    log.error(error);
 
                     // retries
                     if ((retryCount[nftId] || 0) < 5) {
+                        log.warn(error, `retrying... (retry #${retryCount})`);
                         await wait(1000);
                         await runQueuedThumbnailGeneration(request, response);
                     } else {
+                        log.error(error, `retries exhausted`);
                         response
                             .status(
                                 /** Server Error. */
