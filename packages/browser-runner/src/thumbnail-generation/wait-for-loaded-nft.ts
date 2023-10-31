@@ -46,6 +46,7 @@ export async function waitForLoadedNft({
                     nftId,
                 );
 
+                log.info(`Assigning NFT url ${fullExternalContentUrl}`);
                 await frameLocator.evaluate((element, nftUrl) => {
                     (element as DeclarativeElement).instanceInputs.nftUrl = nftUrl;
                 }, fullExternalContentUrl);

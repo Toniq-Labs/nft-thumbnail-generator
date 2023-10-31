@@ -7,7 +7,7 @@ const srcDir = join(thumbnailFrontendPackagePath, 'src');
 const staticDir = join(thumbnailFrontendPackagePath, 'www-static');
 const outDir = join(thumbnailFrontendPackagePath, 'dist');
 
-export default defineConfig({forGitHubPages: true}, (baseConfig) => {
+export default defineConfig({forGitHubPages: true, disableStartupLogs: true}, (baseConfig) => {
     return {
         ...baseConfig,
         publicDir: staticDir,
