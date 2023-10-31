@@ -13,9 +13,11 @@ export type ThumbnailGenerationInput = {
 const frameGenerationTime = {milliseconds: 5_000};
 
 export async function generateNftThumbnail(inputs: ThumbnailGenerationInput): Promise<Buffer> {
-    const {nftId, maxFrameCount, frameLocator, maxLoadTime} = inputs;
+    const {nftId, maxFrameCount, frameLocator} = inputs;
 
+    log.info('waiting for load', nftId, performance.now());
     await waitForLoadedNft(inputs);
+    log.info('generating frames', nftId, performance.now());
     const frames = await generateThumbnailFrames({
         locator: frameLocator,
         maxFrameCount,
@@ -25,7 +27,9 @@ export async function generateNftThumbnail(inputs: ThumbnailGenerationInput): Pr
         log.warn(`Unexpected frame count '${frames.length}' for NFT '${nftId}'`);
     }
 
+    log.info('creating buffer', nftId, performance.now());
     const buffer = await createThumbnailBuffer({frames, nftId, maxFrameCount});
+    log.info('finished', nftId, performance.now());
     return buffer;
 }
 

@@ -136,7 +136,8 @@ export async function startThumbnailCluster(
 
                 response.status(result.code).send(result.value);
             } catch (error) {
-                responseDeferredPromise.reject(error);
+                /** Don't reject this cause it'll cause the workers to crash. */
+                responseDeferredPromise.resolve();
                 const errorId = randomString();
                 log.error(`{errorId: ${errorId}} ${extractErrorMessage(error)}`);
                 response

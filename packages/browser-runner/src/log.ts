@@ -10,17 +10,21 @@ export async function resetLogs() {
     );
 }
 
+function joinArgs(...args: any[]): string {
+    return args.map((arg) => arg.toString()).join(' ') + '\n';
+}
+
 export const log = {
     info(...args: any[]) {
-        appendFileSync(logFiles.info, `[INFO] ${args.map((arg) => arg.toString()).join(' ')}`);
+        appendFileSync(logFiles.info, `[INFO] ${joinArgs(args)}`);
     },
     error(...args: any[]) {
-        appendFileSync(logFiles.error, `[ERROR] ${args.map((arg) => arg.toString()).join(' ')}`);
+        appendFileSync(logFiles.error, `[ERROR] ${joinArgs(args)}`);
     },
     warn(...args: any[]) {
-        appendFileSync(logFiles.error, `[WARNING] ${args.map((arg) => arg.toString()).join(' ')}`);
+        appendFileSync(logFiles.error, `[WARNING] ${joinArgs(args)}`);
     },
     success(...args: any[]) {
-        appendFileSync(logFiles.info, `[SUCCESS] ${args.map((arg) => arg.toString()).join(' ')}`);
+        appendFileSync(logFiles.info, `[SUCCESS] ${joinArgs(args)}`);
     },
 };
