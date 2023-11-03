@@ -27,10 +27,6 @@ export const ToniqFrameGenApp = defineElementNoInputs({
                     height: 600,
                 },
                 allowScrolling: false,
-                loadWait: {
-                    milliseconds: 500,
-                },
-                timeoutMs: 10_000,
             })}></${ToniqNftFrame}>
         `;
     },
