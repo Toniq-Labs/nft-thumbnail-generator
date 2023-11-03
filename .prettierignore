@@ -10,5 +10,5 @@ src/all-files-for-code-coverage.test.ts
 ts.out/
 tsconfig.tsbuildinfo
 
-docs-dist/
+pages-dist/
 screenshots/
