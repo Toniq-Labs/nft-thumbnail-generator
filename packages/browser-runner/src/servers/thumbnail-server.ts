@@ -153,7 +153,7 @@ export async function startThumbnailCluster(
 
                     // retries
                     if ((retryCount[nftId] || 0) < 5) {
-                        log.warn(error, `retrying... (retry #${retryCount})`);
+                        log.warn(error, `retrying... (retry #${retryCount[nftId]})`);
                         await wait(1000);
                         await runQueuedThumbnailGeneration(request, response);
                     } else {
