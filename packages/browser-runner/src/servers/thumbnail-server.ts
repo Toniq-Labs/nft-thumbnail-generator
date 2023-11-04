@@ -29,14 +29,20 @@ type ClusterConfig = Overwrite<
     {workerListener(this: Worker, message: string): void}
 >;
 
-async function runThumbnailEndpoint(
-    nftId: string | undefined,
+async function runThumbnailGeneration({
+    nftId,
+    thumbnailConfig,
+    pageContext,
+    bypassLoading,
+}: {
+    nftId: string | undefined;
     thumbnailConfig: Pick<
         ThumbnailServerConfig,
         Extract<keyof ThumbnailGenerationInput, keyof ThumbnailServerConfig>
-    >,
-    pageContext: PageContext,
-): Promise<{code: number; value: any}> {
+    >;
+    pageContext: PageContext;
+    bypassLoading: boolean;
+}): Promise<{code: number; value: any}> {
     if (!nftId) {
         return {
             /** Bad Request. */
@@ -48,6 +54,7 @@ async function runThumbnailEndpoint(
     const generationConfig: ThumbnailGenerationInput = {
         ...thumbnailConfig,
         ...pageContext,
+        bypassLoading,
         nftId,
     };
     const thumbnail = await generateNftThumbnail(generationConfig);
@@ -127,13 +134,20 @@ export async function startThumbnailCluster(
 
                 const responseDeferredPromise = createDeferredPromiseWrapper<void>();
                 const nftId = request.params.nftId;
+
+                const shouldKeepTrying = (retryCount[nftId] || 0) < serverConfig.maxAttempts;
                 try {
                     responseDeferredPromise.promise.finally(async () => {
                         await pageContext.page.close();
                     });
 
                     const startTime = Date.now();
-                    const result = await runThumbnailEndpoint(nftId, serverConfig, pageContext);
+                    const result = await runThumbnailGeneration({
+                        nftId,
+                        thumbnailConfig: serverConfig,
+                        pageContext,
+                        bypassLoading: !shouldKeepTrying,
+                    });
                     const endTime = Date.now();
                     const diffTime = {seconds: ((endTime - startTime) / 1000).toFixed(1)};
                     log.info(`${nftId} took ${diffTime.seconds} seconds`);
@@ -142,18 +156,20 @@ export async function startThumbnailCluster(
 
                     response.status(result.code).send(result.value);
                 } catch (error) {
-                    if (retryCount[nftId]) {
-                        retryCount[nftId]++;
-                    } else {
-                        retryCount[nftId] = 1;
-                    }
-
                     /** Don't reject this cause it'll cause the workers to crash. */
                     responseDeferredPromise.resolve();
 
                     // retries
-                    if ((retryCount[nftId] || 0) < 5) {
-                        log.warn(error, `retrying... (retry #${retryCount[nftId]})`);
+                    if (shouldKeepTrying) {
+                        if (retryCount[nftId]) {
+                            retryCount[nftId]++;
+                        } else {
+                            retryCount[nftId] = 1;
+                        }
+                        log.warn(
+                            error,
+                            `retrying... (starting attempt #${(retryCount[nftId] || 0) + 1})`,
+                        );
                         await wait(1000);
                         await runQueuedThumbnailGeneration(request, response);
                     } else {

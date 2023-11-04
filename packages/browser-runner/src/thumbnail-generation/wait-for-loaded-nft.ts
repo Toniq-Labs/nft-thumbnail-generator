@@ -1,4 +1,5 @@
 import {PromiseTimeoutError, joinUrlParts, wait, wrapPromiseInTimeout} from '@augment-vir/common';
+import type {NftFrameConfig} from '@toniq-labs/toniq-nft-frame';
 import {Duration, DurationUnit} from 'date-vir';
 import type {DeclarativeElement} from 'element-vir';
 import type {Locator} from 'playwright';
@@ -13,6 +14,11 @@ export type WaitForLoadedNftInputs = {
     maxLoadTime: Duration<DurationUnit.Milliseconds>;
     externalContentUrlOrigin: string;
     externalContentUrlPath: string;
+    /**
+     * If set to true, thumbnail generation won't wait for the content URL to load and it'll timeout
+     * immediately, taking a screenshot of the error screen.
+     */
+    bypassLoading: boolean;
 };
 
 export async function waitForLoadedNft({
@@ -23,6 +29,7 @@ export async function waitForLoadedNft({
     maxLoadTime,
     externalContentUrlOrigin,
     externalContentUrlPath,
+    bypassLoading,
 }: WaitForLoadedNftInputs) {
     try {
         await wrapPromiseInTimeout(
@@ -47,9 +54,19 @@ export async function waitForLoadedNft({
                 );
 
                 log.info(`Assigning NFT url ${fullExternalContentUrl}`);
-                await frameLocator.evaluate((element, nftUrl) => {
-                    (element as DeclarativeElement).instanceInputs.nftUrl = nftUrl;
-                }, fullExternalContentUrl);
+                await frameLocator.evaluate(
+                    (element, {nftUrl, timeoutDuration}) => {
+                        (
+                            (element as DeclarativeElement).instanceInputs as NftFrameConfig
+                        ).timeoutDuration = timeoutDuration;
+                        ((element as DeclarativeElement).instanceInputs as NftFrameConfig).nftUrl =
+                            nftUrl;
+                    },
+                    {
+                        nftUrl: fullExternalContentUrl,
+                        timeoutDuration: bypassLoading ? {milliseconds: 0} : maxLoadTime,
+                    },
+                );
 
                 await settleWaiter;
                 await doneLoadingLocator.waitFor();
@@ -64,6 +81,8 @@ export async function waitForLoadedNft({
         if (error instanceof PromiseTimeoutError) {
             log.error(`Timed out waiting for full ${nftId} load.`);
         }
-        throw error;
+        if (!bypassLoading) {
+            throw error;
+        }
     }
 }

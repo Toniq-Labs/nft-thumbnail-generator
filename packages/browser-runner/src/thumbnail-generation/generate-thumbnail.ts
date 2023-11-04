@@ -101,23 +101,9 @@ async function generateThumbnailFrames({
             const diff = await compareImages(latestFrame, newFrame);
             log.time({nftId, description: `got diff ${diff} for frame ${frames.length}`});
             if (diff > 5) {
-                // // uncomment for debugging
-                // await newFrame
-                //     .webp({
-                //         quality: 100,
-                //         lossless: true,
-                //     })
-                //     .toFile(join(debugDir, `${nftId}-${frames.length}.webp`));
                 frames.push(newFrame);
             }
         } else {
-            // // uncomment for debugging
-            // await newFrame
-            //     .webp({
-            //         quality: 100,
-            //         lossless: true,
-            //     })
-            //     .toFile(join(debugDir, `${nftId}-${frames.length}.webp`));
             frames.push(newFrame);
         }
     }

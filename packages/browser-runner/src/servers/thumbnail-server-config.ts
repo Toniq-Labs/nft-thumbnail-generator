@@ -4,6 +4,11 @@ import {ThumbnailGenerationInput} from '../thumbnail-generation/generate-thumbna
 export type ThumbnailServerConfig = {
     expressPort: number;
     workerCount: number;
+    /**
+     * Max attempts at loading the image. On the last attempt, the error message will be used in the
+     * screenshot. If even that fails, the thumbnail generation will be aborted.
+     */
+    maxAttempts: number;
 
     browserConfig: BrowserStartupConfig;
     viteUrl: {
@@ -12,5 +17,5 @@ export type ThumbnailServerConfig = {
     };
 } & Omit<
     ThumbnailGenerationInput,
-    'nftId' | 'frameLocator' | 'doneLoadingLocator' | 'waitForAllPageRequests'
+    'nftId' | 'frameLocator' | 'doneLoadingLocator' | 'waitForAllPageRequests' | 'bypassLoading'
 >;

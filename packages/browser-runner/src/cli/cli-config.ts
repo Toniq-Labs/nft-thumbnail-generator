@@ -4,7 +4,7 @@ import {ThumbnailServerConfig} from '../servers/thumbnail-server-config';
 
 export const defaultServerConfig: Omit<
     ThumbnailServerConfig,
-    'expressPort' | 'externalContentUrlOrigin'
+    'expressPort' | 'externalContentUrlOrigin' | 'bypassLoading'
 > & {
     testOutputDir: string;
 } = {
@@ -13,6 +13,7 @@ export const defaultServerConfig: Omit<
     maxLoadTime: {
         milliseconds: 10_000,
     },
+    maxAttempts: 4,
     browserConfig: {
         browserSize: {
             height: 600,
