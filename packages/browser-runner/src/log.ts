@@ -46,5 +46,7 @@ export const log = {
 };
 
 console.log = log.info;
+console.info = log.info;
+console.debug = log.info;
 console.error = log.error;
 console.warn = log.warn;
