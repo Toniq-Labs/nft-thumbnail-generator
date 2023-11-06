@@ -22,7 +22,7 @@
     },
     "devDependencies": {
         "cspell": "^7.3.8",
-        "dependency-cruiser": "^15.1.1",
+        "dependency-cruiser": "^15.2.0",
         "esbuild": "^0.19.5",
         "mono-vir": "^0.1.6",
         "npm-check-updates": "~16.12.3",
