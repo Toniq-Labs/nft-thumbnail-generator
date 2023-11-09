@@ -68,7 +68,7 @@ function extractServerOrigin(rawArgs: ReadonlyArray<string>): URL {
 export function extractArgs(rawArgs: ReadonlyArray<string>): {
     port: number;
     command: CliCommandEnum;
-    externalContentOrigin: URL;
+    externalContentOrigin: string;
 } {
     const relevantArgs = extractRelevantArgs({
         binName: undefined,
@@ -78,7 +78,7 @@ export function extractArgs(rawArgs: ReadonlyArray<string>): {
 
     const command = extractCliCommand(relevantArgs);
     const port = extractPortNumber(relevantArgs);
-    const externalContentOrigin = extractServerOrigin(relevantArgs);
+    const externalContentOrigin = extractServerOrigin(relevantArgs).toString();
 
     return {port, command, externalContentOrigin};
 }

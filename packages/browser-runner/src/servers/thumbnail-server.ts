@@ -21,6 +21,7 @@ import {
     ThumbnailGenerationInput,
     generateNftThumbnail,
 } from '../thumbnail-generation/generate-thumbnail';
+import {isOriginServerUp} from './check-origin';
 import {ThumbnailServerConfig} from './thumbnail-server-config';
 import {formViteUrl, startViteServer} from './vite-server';
 
@@ -125,6 +126,10 @@ export async function startThumbnailCluster(
                 }>,
                 response: Response,
             ) {
+                if (!(await isOriginServerUp(serverConfig.externalContentUrlOrigin))) {
+                    response.status(500).send('Content server is down.');
+                }
+
                 const pageContext = await setupBrowserPage(browserContext);
 
                 await navigateToUrl({
@@ -168,7 +173,9 @@ export async function startThumbnailCluster(
                         }
                         log.warn(
                             error,
-                            `retrying... (starting attempt #${(retryCount[nftId] || 0) + 1})`,
+                            `retrying ${nftId}... (starting attempt #${
+                                (retryCount[nftId] || 0) + 1
+                            })`,
                         );
                         await wait(1000);
                         await runQueuedThumbnailGeneration(request, response);

@@ -1,6 +1,7 @@
-import {ensureError, waitForCondition} from '@augment-vir/common';
+import {ensureError} from '@augment-vir/common';
 import nodeCluster from 'cluster';
 import {log, resetLogs} from '../log';
+import {isOriginServerUp} from '../servers/check-origin';
 import {startThumbnailCluster} from '../servers/thumbnail-server';
 import {ThumbnailServerConfig} from '../servers/thumbnail-server-config';
 import {CliCommandEnum, extractArgs} from './cli-args';
@@ -13,25 +14,15 @@ export async function runThumbGenCli(rawArgs: ReadonlyArray<string>) {
             await resetLogs();
 
             log.info(`Checking content origin ${externalContentOrigin}`);
-            try {
-                await waitForCondition({
-                    async conditionCallback() {
-                        await fetch(externalContentOrigin);
-                        return true;
-                    },
-                    intervalMs: 100,
-                    timeoutMs: 5_000,
-                });
-            } catch (error) {
-                log.error(`Failed to connect to content origin: ${externalContentOrigin}`);
-                throw error;
+            if (!(await isOriginServerUp(externalContentOrigin))) {
+                throw new Error('Failed to connect to origin ${externalContentOrigin}');
             }
         }
 
         const fullServerConfig: ThumbnailServerConfig = {
             ...defaultServerConfig,
             expressPort: port,
-            externalContentUrlOrigin: externalContentOrigin.toString(),
+            externalContentUrlOrigin: externalContentOrigin,
         };
 
         await startThumbnailCluster(fullServerConfig);

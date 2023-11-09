@@ -21,7 +21,7 @@
         "test:types": "mono-vir for-each-async tsc --noEmit"
     },
     "devDependencies": {
-        "cspell": "^7.3.8",
+        "cspell": "^8.0.0",
         "dependency-cruiser": "^15.2.0",
         "esbuild": "^0.19.5",
         "mono-vir": "^0.1.6",
