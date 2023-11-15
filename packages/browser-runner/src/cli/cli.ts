@@ -1,18 +1,20 @@
 import {ensureError} from '@augment-vir/common';
 import nodeCluster from 'cluster';
-import {log, resetLogs} from '../log';
+import {log} from '../log';
 import {isOriginServerUp} from '../servers/check-origin';
 import {startThumbnailCluster} from '../servers/thumbnail-server';
 import {ThumbnailServerConfig} from '../servers/thumbnail-server-config';
 import {CliCommandEnum, extractArgs} from './cli-args';
 import {defaultServerConfig} from './cli-config';
 
+const startingServerMessage = '>>>>>>>>>>>>>>>> STARTING UP SERVER';
+
 export async function runThumbGenCli(rawArgs: ReadonlyArray<string>) {
     try {
         const {command, port, externalContentOrigin} = extractArgs(rawArgs);
         if (nodeCluster.isPrimary) {
-            await resetLogs();
-
+            log.error(startingServerMessage);
+            log.info(startingServerMessage);
             log.info(`Checking content origin ${externalContentOrigin}`);
             if (!(await isOriginServerUp(externalContentOrigin))) {
                 throw new Error('Failed to connect to origin ${externalContentOrigin}');

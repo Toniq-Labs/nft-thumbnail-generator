@@ -4,12 +4,7 @@ const monoRepoDir = resolve(__dirname, '..', '..', '..');
 const packagesDir = join(monoRepoDir, 'packages');
 const frontendPackageDir = join(packagesDir, 'thumbnail-frontend');
 const browserRunnerPackageDir = join(packagesDir, 'browser-runner');
-const logsDir = join(monoRepoDir, 'logs');
-
-export const logFiles = {
-    info: join(logsDir, 'info.log'),
-    error: join(logsDir, 'error.log'),
-};
+export const logsDir = join(monoRepoDir, 'logs');
 
 const notCommittedDir = join(monoRepoDir, '.not-committed');
 

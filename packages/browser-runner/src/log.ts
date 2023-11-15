@@ -1,17 +1,24 @@
-import {getNowFullDate, utcTimezone} from 'date-vir';
+import {getNowFullDate, toSimpleDatePartString, utcTimezone} from 'date-vir';
 import {appendFileSync} from 'fs';
-import {writeFile} from 'fs/promises';
-import {logFiles} from './repo-paths';
+import {join} from 'path';
+import {logsDir} from './repo-paths';
 
-export async function resetLogs() {
-    await Promise.all(
-        Object.values(logFiles).map(async (logFilePath) => {
-            await writeFile(logFilePath, '');
-        }),
-    );
+enum LogTypeEnum {
+    Error = 'error',
+    Info = 'info',
 }
 
-function runLog(logFilePath: string, logHeader: string, args: any[]) {
+function getLogFilePath(logType: LogTypeEnum): string {
+    const now = getNowFullDate(utcTimezone);
+    const fileName = [
+        toSimpleDatePartString(now),
+        logType,
+        'log',
+    ].join('.');
+    return join(logsDir, fileName);
+}
+
+function runLog(logType: LogTypeEnum, logHeader: string, args: any[]) {
     const joinedArgs = args.map((arg) => arg.toString()).join(' ') + '\n';
     const now = getNowFullDate(utcTimezone);
     const timestamp = `${now.year}-${String(now.month).padStart(2, '0')}-${String(now.day).padStart(
@@ -20,28 +27,28 @@ function runLog(logFilePath: string, logHeader: string, args: any[]) {
     )} ${String(now.hour).padStart(2, '0')}:${String(now.minute).padStart(2, '0')}:${String(
         now.second,
     ).padStart(2, '0')}`;
-    appendFileSync(logFilePath, `${timestamp} | ${logHeader} ${joinedArgs}`);
+    appendFileSync(getLogFilePath(logType), `${timestamp} | ${logHeader} ${joinedArgs}`);
 }
 
 export const log = {
     info(...args: any[]) {
-        runLog(logFiles.info, '[INFO]', args);
+        runLog(LogTypeEnum.Info, '[INFO]', args);
     },
     time({nftId, description}: {nftId: string; description: string}) {
-        runLog(logFiles.info, '[TIME]', [
+        runLog(LogTypeEnum.Info, '[TIME]', [
             performance.now(),
             nftId,
             description,
         ]);
     },
     error(...args: any[]) {
-        runLog(logFiles.error, '[ERROR]', args);
+        runLog(LogTypeEnum.Error, '[ERROR]', args);
     },
     warn(...args: any[]) {
-        runLog(logFiles.error, '[WARNING]', args);
+        runLog(LogTypeEnum.Error, '[WARNING]', args);
     },
     success(...args: any[]) {
-        runLog(logFiles.info, '[SUCCESS]', args);
+        runLog(LogTypeEnum.Info, '[SUCCESS]', args);
     },
 };
 
