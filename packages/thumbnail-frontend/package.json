@@ -15,7 +15,7 @@
     "dependencies": {
         "@augment-vir/browser": "^21.6.0",
         "@augment-vir/common": "^21.6.0",
-        "@toniq-labs/toniq-nft-frame": "^2.2.1",
+        "@toniq-labs/toniq-nft-frame": "^2.3.0",
         "element-vir": "^16.5.2"
     },
     "devDependencies": {
