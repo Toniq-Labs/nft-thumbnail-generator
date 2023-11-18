@@ -2,7 +2,7 @@ import {addSuffix, joinUrlParts} from '@augment-vir/common';
 import {mkdir, writeFile} from 'fs/promises';
 import {join} from 'path';
 import {thumbnailEndpointPath} from '../servers/thumbnail-server';
-import {intentionallyInvalidInscriptionId} from './test-cases';
+import {intentionallyInvalidNftId} from './test-cases';
 
 async function generateTestThumbnail({
     expressServerOrigin,
@@ -38,7 +38,7 @@ export async function generateTestThumbnails({
     /** Run on invalid again to test invalid cache */
     await generateTestThumbnail({
         expressServerOrigin,
-        nftId: intentionallyInvalidInscriptionId,
+        nftId: intentionallyInvalidNftId,
         outputDir,
     });
 
