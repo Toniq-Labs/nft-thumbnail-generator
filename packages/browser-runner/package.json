@@ -9,7 +9,7 @@
     "scripts": {
         "compile": "virmator compile",
         "debug": "node --inspect-brk -r ts-node/register src/cli/cli.ts",
-        "start": "echo \"See ./logs/ for output.\" && ts-node src/cli/cli.ts",
+        "start": "echo \"See ./.not-committed/logs/ for output.\" && ts-node src/cli/cli.ts",
         "start:built": "npm run compile && node dist/cli/cli.js",
         "test": "virmator test",
         "test:types": "tsc --noEmit"

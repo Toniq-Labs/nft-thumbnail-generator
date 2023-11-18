@@ -100,8 +100,10 @@ export async function startThumbnailCluster(
         try {
             addExitCallback(() => {
                 log.warn(`Closing server on worker ${worker.id}, process ${worker.process.pid}`);
-                server.closeAllConnections();
-                server.close();
+                try {
+                    server.closeAllConnections();
+                    server.close();
+                } catch (error) {}
             });
 
             log.info(`Spawning express cluster worker ${worker.id}, process ${worker.process.pid}`);
