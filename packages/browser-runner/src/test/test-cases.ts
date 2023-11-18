@@ -1,3 +1,5 @@
+export const intentionallyInvalidInscriptionId = 'intentionally-incorrect-inscription-id';
+
 export const testNftIds: ReadonlyArray<string> = [
     // cspell:disable
     '07161c97c861032968771e9df1a77afa8827bede9281da90d333403a0dcaff4di0', // animated, interesting
@@ -29,6 +31,6 @@ export const testNftIds: ReadonlyArray<string> = [
     'cbfe8771624124378a336af25ebd2187a1c1ae071c5474b3a4c09dbf04dc7a5di0',
     'd3780d0faed0db9f8b37efd886b882d3ce3abe75acfc11f5e6a7c042928a34abi0',
     '00f737af555ac495a15c3f7650679a4ba320c8c6b47769b77ea4daf4f643bcb6i0',
-    'intentionally-incorrect-inscription-id',
+    intentionallyInvalidInscriptionId,
     // cspell:enable
 ];

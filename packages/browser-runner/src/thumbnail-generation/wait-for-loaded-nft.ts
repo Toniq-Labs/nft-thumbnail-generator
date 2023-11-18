@@ -1,4 +1,10 @@
-import {PromiseTimeoutError, joinUrlParts, wait, wrapPromiseInTimeout} from '@augment-vir/common';
+import {
+    PromiseTimeoutError,
+    joinUrlParts,
+    wait,
+    waitForCondition,
+    wrapPromiseInTimeout,
+} from '@augment-vir/common';
 import type {NftFrameConfig} from '@toniq-labs/toniq-nft-frame';
 import {Duration, DurationUnit} from 'date-vir';
 import type {DeclarativeElement} from 'element-vir';
@@ -35,16 +41,29 @@ export async function waitForLoadedNft({
         await wrapPromiseInTimeout(
             maxLoadTime.milliseconds,
             (async (): Promise<void> => {
+                await waitForCondition({
+                    async conditionCallback() {
+                        await frameLocator.isVisible();
+                        return true;
+                    },
+                    intervalMs: 500,
+                    timeoutMs: maxLoadTime.milliseconds,
+                });
                 const settleWaiter = frameLocator.evaluate((element) => {
                     return new Promise<void>((resolve) => {
                         function settleListener(event: Event) {
                             if ((event as CustomEvent<boolean>).detail === true) {
-                                element.removeEventListener('settle', settleListener);
+                                element.removeEventListener(
+                                    'toniq-nft-frame-settle',
+                                    settleListener,
+                                );
                                 resolve();
                             }
                         }
 
-                        element.addEventListener('settle', settleListener, {passive: true});
+                        element.addEventListener('toniq-nft-frame-settle', settleListener, {
+                            passive: true,
+                        });
                     });
                 });
                 const fullExternalContentUrl: string = joinUrlParts(

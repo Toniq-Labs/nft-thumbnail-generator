@@ -3,12 +3,13 @@ import {
     ArrayElement,
     Overwrite,
     createDeferredPromiseWrapper,
+    isRuntimeTypeOf,
     mergeDeep,
     wait,
 } from '@augment-vir/common';
 import {addExitCallback} from 'catch-exit';
 import nodeCluster, {Worker} from 'cluster';
-import express, {Request, Response} from 'express';
+import express from 'express';
 import expressCluster from 'express-cluster';
 import {log} from '../log';
 import {
@@ -22,6 +23,8 @@ import {
     generateNftThumbnail,
 } from '../thumbnail-generation/generate-thumbnail';
 import {isOriginServerUp} from './check-origin';
+import {HttpResult, HttpStatusCodeEnum} from './http-result';
+import {getThumbnailCache, populateInvalidNftCache} from './thumbnail-cache';
 import {ThumbnailServerConfig} from './thumbnail-server-config';
 import {formViteUrl, startViteServer} from './vite-server';
 
@@ -43,11 +46,11 @@ async function runThumbnailGeneration({
     >;
     pageContext: PageContext;
     bypassLoading: boolean;
-}): Promise<{code: number; value: any}> {
+}): Promise<HttpResult> {
     if (!nftId) {
         return {
             /** Bad Request. */
-            code: 400,
+            code: HttpStatusCodeEnum.BadRequest,
             value: 'missing NFT id',
         };
     }
@@ -62,7 +65,7 @@ async function runThumbnailGeneration({
 
     return {
         /** Okay Request. */
-        code: 200,
+        code: HttpStatusCodeEnum.Success,
         value: thumbnail,
     };
 }
@@ -120,14 +123,19 @@ export async function startThumbnailCluster(
 
             const retryCount: Record<string, number> = {};
 
-            async function runQueuedThumbnailGeneration(
-                request: Request<{
-                    nftId: string;
-                }>,
-                response: Response,
-            ) {
+            async function runQueuedThumbnailGeneration(nftId: string): Promise<HttpResult> {
                 if (!(await isOriginServerUp(serverConfig.externalContentUrlOrigin))) {
-                    response.status(500).send('Content server is down.');
+                    return {
+                        code: HttpStatusCodeEnum.ServiceUnavailable,
+                        value: 'Content server is down',
+                    };
+                }
+
+                const cacheResult = await getThumbnailCache(nftId);
+
+                if (cacheResult) {
+                    log.info(`Using cached invalid result for: ${nftId}`);
+                    return cacheResult;
                 }
 
                 const pageContext = await setupBrowserPage(browserContext);
@@ -138,7 +146,6 @@ export async function startThumbnailCluster(
                 });
 
                 const responseDeferredPromise = createDeferredPromiseWrapper<void>();
-                const nftId = request.params.nftId;
 
                 const shouldKeepTrying = (retryCount[nftId] || 0) < serverConfig.maxAttempts;
                 try {
@@ -153,13 +160,20 @@ export async function startThumbnailCluster(
                         pageContext,
                         bypassLoading: !shouldKeepTrying,
                     });
+
+                    if (!shouldKeepTrying) {
+                        if (!isRuntimeTypeOf(result.value, 'string')) {
+                            await populateInvalidNftCache(nftId, result.value);
+                        }
+                    }
+
                     const endTime = Date.now();
                     const diffTime = {seconds: ((endTime - startTime) / 1000).toFixed(1)};
                     log.info(`${nftId} took ${diffTime.seconds} seconds`);
 
                     responseDeferredPromise.resolve();
 
-                    response.status(result.code).send(result.value);
+                    return result;
                 } catch (error) {
                     /** Don't reject this cause it'll cause the workers to crash. */
                     responseDeferredPromise.resolve();
@@ -178,27 +192,33 @@ export async function startThumbnailCluster(
                             })`,
                         );
                         await wait(1000);
-                        await runQueuedThumbnailGeneration(request, response);
+                        /**
+                         * The last retry will run this with the assumption that the nft will error
+                         * out, and return the invalid nft placeholder.
+                         */
+                        return await runQueuedThumbnailGeneration(nftId);
                     } else {
                         log.error(error, `retries exhausted`);
-                        response
-                            .status(
-                                /** Server Error. */
-                                500,
-                            )
-                            .send('Thumbnail generation failed.');
+                        return {
+                            code: HttpStatusCodeEnum.ServerError,
+                            value: 'Thumbnail generation failed.',
+                        };
                     }
                 }
             }
 
-            expressApp.get(`/${thumbnailEndpointPath}/:nftId`, runQueuedThumbnailGeneration);
+            expressApp.get(`/${thumbnailEndpointPath}/:nftId`, async (request, response) => {
+                const results = await runQueuedThumbnailGeneration(request.params.nftId);
+
+                response.status(results.code).send(results.value);
+            });
             expressApp.get('/health', (request, response) => {
-                response.status(200).send('ok');
+                response.status(HttpStatusCodeEnum.Success).send('ok');
             });
             /** Errors fallback. */
             expressApp.use('*', (request, response) => {
                 log.warn(`invalid URL: ${request.originalUrl} from ${request.ip}`);
-                response.status(404).send('Invalid endpoint.');
+                response.status(HttpStatusCodeEnum.Missing).send('Invalid endpoint.');
             });
 
             const server = expressApp.listen(serverConfig.expressPort);

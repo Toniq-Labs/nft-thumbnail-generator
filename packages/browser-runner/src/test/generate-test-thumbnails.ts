@@ -2,6 +2,22 @@ import {addSuffix, joinUrlParts} from '@augment-vir/common';
 import {mkdir, writeFile} from 'fs/promises';
 import {join} from 'path';
 import {thumbnailEndpointPath} from '../servers/thumbnail-server';
+import {intentionallyInvalidInscriptionId} from './test-cases';
+
+async function generateTestThumbnail({
+    expressServerOrigin,
+    nftId,
+    outputDir,
+}: {
+    expressServerOrigin: string;
+    nftId: string;
+    outputDir: string;
+}) {
+    const nftUrl = joinUrlParts(expressServerOrigin, thumbnailEndpointPath, nftId);
+    const response = await fetch(nftUrl);
+
+    await writeFile(join(outputDir, `${nftId}.webp`), Buffer.from(await response.arrayBuffer()));
+}
 
 export async function generateTestThumbnails({
     testNftIds,
@@ -15,15 +31,16 @@ export async function generateTestThumbnails({
     await mkdir(outputDir, {recursive: true});
     await Promise.allSettled(
         testNftIds.map(async (nftId) => {
-            const nftUrl = joinUrlParts(expressServerOrigin, thumbnailEndpointPath, nftId);
-            const response = await fetch(nftUrl);
-
-            await writeFile(
-                join(outputDir, `${nftId}.webp`),
-                Buffer.from(await response.arrayBuffer()),
-            );
+            await generateTestThumbnail({expressServerOrigin, nftId, outputDir});
         }),
     );
+
+    /** Run on invalid again to test invalid cache */
+    await generateTestThumbnail({
+        expressServerOrigin,
+        nftId: intentionallyInvalidInscriptionId,
+        outputDir,
+    });
 
     const indexHtmlPath = join(outputDir, 'index.html');
 

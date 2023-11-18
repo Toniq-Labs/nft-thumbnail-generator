@@ -1,6 +1,6 @@
 import {getNowFullDate, toSimpleDatePartString, utcTimezone} from 'date-vir';
-import {appendFileSync} from 'fs';
-import {join} from 'path';
+import {appendFileSync, existsSync, mkdirSync} from 'fs';
+import {dirname, join} from 'path';
 import {logsDir} from './repo-paths';
 
 enum LogTypeEnum {
@@ -27,7 +27,12 @@ function runLog(logType: LogTypeEnum, logHeader: string, args: any[]) {
     )} ${String(now.hour).padStart(2, '0')}:${String(now.minute).padStart(2, '0')}:${String(
         now.second,
     ).padStart(2, '0')}`;
-    appendFileSync(getLogFilePath(logType), `${timestamp} | ${logHeader} ${joinedArgs}`);
+    const logPath = getLogFilePath(logType);
+    const logDir = dirname(logPath);
+    if (!existsSync(logDir)) {
+        mkdirSync(dirname(logPath), {recursive: true});
+    }
+    appendFileSync(logPath, `${timestamp} | ${logHeader} ${joinedArgs}`);
 }
 
 export const log = {

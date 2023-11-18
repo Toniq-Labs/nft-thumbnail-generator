@@ -1,4 +1,4 @@
-import {waitForCondition} from '@augment-vir/common';
+import {executeWithRetries, waitForCondition} from '@augment-vir/common';
 import {BrowserContext, Locator, Page, webkit} from 'playwright';
 import {WaitForAllPageRequests} from './wait-for-all-page-requests';
 
@@ -33,19 +33,28 @@ export async function startupBrowser({
 }
 
 export async function setupBrowserPage(browserContext: BrowserContext) {
+    return await executeWithRetries(3, async () => await tryToSetupBrowserPage(browserContext));
+}
+
+export async function tryToSetupBrowserPage(browserContext: BrowserContext) {
     const page = await browserContext.newPage();
 
-    const waitForAllPageRequests = new WaitForAllPageRequests(page);
+    try {
+        const waitForAllPageRequests = new WaitForAllPageRequests(page);
 
-    const frameLocator = page.locator('toniq-nft-frame').first();
-    const doneLoadingLocator = page.locator('toniq-nft-frame.hide-loading').first();
+        const frameLocator = page.locator('toniq-nft-frame').first();
+        const doneLoadingLocator = page.locator('toniq-nft-frame.hide-loading').first();
 
-    return {
-        page,
-        waitForAllPageRequests,
-        frameLocator,
-        doneLoadingLocator,
-    };
+        return {
+            page,
+            waitForAllPageRequests,
+            frameLocator,
+            doneLoadingLocator,
+        };
+    } catch (error) {
+        await page.close();
+        throw error;
+    }
 }
 
 export async function navigateToUrl({page, url}: {page: Page; url: string}) {

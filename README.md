@@ -10,7 +10,13 @@ Note that this server does not handle caching of these thumbnails.
 
 ## Logs
 
-All logs are stored in the `logs` directory, separated by info logs and error logs.
+All logs are stored in the `.not-committed/logs` directory, separated by info logs and error logs.
+
+## Cache
+
+Cache is stored in the `.not-committed/cache` directory. It is okay to frequently delete this directory.
+
+Note that `.not-committed/invalid.webp` is also technically part of the cache, but it is not meant to be deleted frequently. It should only be deleted when the "missing image" placeholder changes.
 
 ## Production startup
 
