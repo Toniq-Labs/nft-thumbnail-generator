@@ -3,7 +3,6 @@ import {
     ArrayElement,
     Overwrite,
     createDeferredPromiseWrapper,
-    isRuntimeTypeOf,
     mergeDeep,
     wait,
 } from '@augment-vir/common';
@@ -11,6 +10,7 @@ import {addExitCallback} from 'catch-exit';
 import nodeCluster, {Worker} from 'cluster';
 import express from 'express';
 import expressCluster from 'express-cluster';
+import {isRunTimeType} from 'run-time-assertions';
 import {log} from '../log';
 import {
     PageContext,
@@ -164,7 +164,7 @@ export async function startThumbnailCluster(
                     });
 
                     if (!shouldKeepTrying) {
-                        if (!isRuntimeTypeOf(result.value, 'string')) {
+                        if (!isRunTimeType(result.value, 'string')) {
                             await populateInvalidNftCache(nftId, result.value);
                         }
                     }
